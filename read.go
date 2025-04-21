@@ -23,17 +23,8 @@ type Tree struct {
 	err      error
 }
 
-func OpenAt(r io.ReaderAt, pos int64) (*Tree, error) {
-	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(r, pos-16, 16)}
-
-	children := sr.ReadInt64()
-	data := sr.ReadInt64()
-
-	if sr.Err != nil {
-		return nil, sr.Err
-	}
-
-	return &Tree{r: r, children: children, data: data, ptr: pos}, nil
+func OpenAt(r io.ReaderAt, pos int64) *Tree {
+	return &Tree{r: r, ptr: pos}
 }
 
 func (t *Tree) WriteTo(w io.Writer) (int64, error) {
@@ -41,7 +32,7 @@ func (t *Tree) WriteTo(w io.Writer) (int64, error) {
 }
 
 func (t *Tree) Child(name string) (*Tree, error) {
-	if err := t.initChildren(); err != nil {
+	if err := t.init(); err != nil {
 		return nil, err
 	}
 
@@ -57,10 +48,10 @@ func (t *Tree) Child(name string) (*Tree, error) {
 		return nil, err
 	}
 
-	return OpenAt(t.r, childPtr)
+	return OpenAt(t.r, childPtr), nil
 }
 
-func (t *Tree) initChildren() error {
+func (t *Tree) init() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -68,6 +59,18 @@ func (t *Tree) initChildren() error {
 		return nil
 	}
 
+	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptr-16, 16)}
+	t.children = sr.ReadInt64()
+	t.data = sr.ReadInt64()
+
+	if sr.Err != nil {
+		return sr.Err
+	}
+
+	return t.initChildren()
+}
+
+func (t *Tree) initChildren() error {
 	var nameData [][2]int64
 	var start int64
 
@@ -122,7 +125,7 @@ func (t *Tree) getChildIndex(name string) (int64, error) {
 }
 
 func (t *Tree) Children() iter.Seq2[string, Node] {
-	if err := t.initChildren(); err != nil {
+	if err := t.init(); err != nil {
 		t.err = err
 
 		return func(_ func(string, Node) bool) {}
@@ -149,14 +152,7 @@ func (t *Tree) Children() iter.Seq2[string, Node] {
 				return
 			}
 
-			childNode, err := OpenAt(t.r, ptr)
-			if err != nil {
-				t.err = err
-
-				return
-			}
-
-			if !yield(sb.String(), childNode) {
+			if !yield(sb.String(), OpenAt(t.r, ptr)) {
 				return
 			}
 
