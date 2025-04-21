@@ -38,11 +38,9 @@ func (t *Tree) WriteTo(w io.Writer) (int64, error) {
 }
 
 func (t *Tree) Child(name string) (*Tree, error) {
-	t.mu.Lock()
-	if t.nameData == nil {
-		t.initChildren()
+	if err := t.initChildren(); err != nil {
+		return nil, err
 	}
-	t.mu.Unlock()
 
 	nameBytes := unsafe.Slice(unsafe.StringData(name), len(name))
 
@@ -78,6 +76,13 @@ func (t *Tree) Child(name string) (*Tree, error) {
 }
 
 func (t *Tree) initChildren() error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if t.nameData != nil {
+		return nil
+	}
+
 	var nameData [][2]int64
 	var start int64
 
