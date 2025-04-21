@@ -86,6 +86,7 @@ func (t *Tree) initChildren() error {
 
 	t.nameData = nameData
 	t.names = t.children + sr.Count
+	t.ptrs = t.names + start
 
 	return nil
 }
