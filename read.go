@@ -131,33 +131,35 @@ func (t *Tree) Children() iter.Seq2[string, Node] {
 		return func(_ func(string, Node) bool) {}
 	}
 
-	return func(yield func(string, Node) bool) {
-		var sb strings.Builder
+	return t.iterChildren
+}
 
-		nameReader := io.NewSectionReader(t.r, t.names, t.ptrs-t.names)
-		ptrReader := byteio.LittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptrs, t.data-t.ptrs)}
+func (t *Tree) iterChildren(yield func(string, Node) bool) {
+	var sb strings.Builder
 
-		for _, child := range t.nameData {
-			_, err := io.CopyN(&sb, nameReader, child[1])
-			if err != nil {
-				t.err = err
+	nameReader := io.NewSectionReader(t.r, t.names, t.ptrs-t.names)
+	ptrReader := byteio.LittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptrs, t.data-t.ptrs)}
 
-				return
-			}
+	for _, child := range t.nameData {
+		_, err := io.CopyN(&sb, nameReader, child[1])
+		if err != nil {
+			t.err = err
 
-			ptr, _, err := ptrReader.ReadInt64()
-			if err != nil {
-				t.err = err
-
-				return
-			}
-
-			if !yield(sb.String(), OpenAt(t.r, ptr)) {
-				return
-			}
-
-			sb.Reset()
+			return
 		}
+
+		ptr, _, err := ptrReader.ReadInt64()
+		if err != nil {
+			t.err = err
+
+			return
+		}
+
+		if !yield(sb.String(), OpenAt(t.r, ptr)) {
+			return
+		}
+
+		sb.Reset()
 	}
 }
 
