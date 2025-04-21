@@ -5,15 +5,19 @@ import (
 	"errors"
 	"io"
 	"sort"
+	"sync"
 	"unsafe"
 
 	"vimagination.zapto.org/byteio"
 )
 
 type Tree struct {
-	r                                io.ReaderAt
-	children, names, ptrs, data, ptr int64
-	nameData                         [][2]int64
+	r                         io.ReaderAt
+	children, ptrs, data, ptr int64
+
+	mu       sync.Mutex
+	names    int64
+	nameData [][2]int64
 }
 
 func OpenAt(r io.ReaderAt, pos int64) (*Tree, error) {
@@ -34,29 +38,11 @@ func (t *Tree) WriteTo(w io.Writer) (int64, error) {
 }
 
 func (t *Tree) Child(name string) (*Tree, error) {
+	t.mu.Lock()
 	if t.nameData == nil {
-		var nameData [][2]int64
-		var start int64
-
-		sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(t.r, t.children, t.data-t.children)}
-
-		for {
-			l := int64(sr.ReadUintX())
-			if l == 0 {
-				break
-			}
-
-			nameData = append(nameData, [2]int64{start, l})
-			start += l
-		}
-
-		if sr.Err != nil {
-			return nil, sr.Err
-		}
-
-		t.nameData = nameData
-		t.names = t.children + sr.Count
+		t.initChildren()
 	}
+	t.mu.Unlock()
 
 	nameBytes := unsafe.Slice(unsafe.StringData(name), len(name))
 
@@ -89,6 +75,32 @@ func (t *Tree) Child(name string) (*Tree, error) {
 	}
 
 	return OpenAt(t.r, childPtr)
+}
+
+func (t *Tree) initChildren() error {
+	var nameData [][2]int64
+	var start int64
+
+	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(t.r, t.children, t.data-t.children)}
+
+	for {
+		l := int64(sr.ReadUintX())
+		if l == 0 {
+			break
+		}
+
+		nameData = append(nameData, [2]int64{start, l})
+		start += l
+	}
+
+	if sr.Err != nil {
+		return sr.Err
+	}
+
+	t.nameData = nameData
+	t.names = t.children + sr.Count
+
+	return nil
 }
 
 // Errors
