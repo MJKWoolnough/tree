@@ -42,30 +42,12 @@ func (t *Tree) Child(name string) (*Tree, error) {
 		return nil, err
 	}
 
-	nameBytes := unsafe.Slice(unsafe.StringData(name), len(name))
-
-	var err error
-
-	pos, found := sort.Find(len(t.nameData), func(i int) int {
-		tName := make([]byte, t.nameData[i][1])
-
-		_, err = io.ReadFull(io.NewSectionReader(t.r, t.nameData[i][0], int64(len(tName))), tName)
-		if err != nil {
-			return 0
-		}
-
-		return bytes.Compare(nameBytes, tName)
-	})
-
+	pos, err := t.getChildIndex(name)
 	if err != nil {
 		return nil, err
 	}
 
-	if !found {
-		return nil, ErrNotFound
-	}
-
-	sr := byteio.LittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptrs+int64(pos)*8, 8)}
+	sr := byteio.LittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptrs+pos*8, 8)}
 
 	childPtr, _, err := sr.ReadInt64()
 	if err != nil {
@@ -106,6 +88,33 @@ func (t *Tree) initChildren() error {
 	t.names = t.children + sr.Count
 
 	return nil
+}
+
+func (t *Tree) getChildIndex(name string) (int64, error) {
+	nameBytes := unsafe.Slice(unsafe.StringData(name), len(name))
+
+	var err error
+
+	pos, found := sort.Find(len(t.nameData), func(i int) int {
+		tName := make([]byte, t.nameData[i][1])
+
+		_, err = io.ReadFull(io.NewSectionReader(t.r, t.nameData[i][0], int64(len(tName))), tName)
+		if err != nil {
+			return 0
+		}
+
+		return bytes.Compare(nameBytes, tName)
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	if !found {
+		return 0, ErrNotFound
+	}
+
+	return int64(pos), nil
 }
 
 // Errors
