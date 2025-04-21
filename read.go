@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"iter"
 	"sort"
+	"strings"
 	"sync"
 	"unsafe"
 
@@ -18,6 +20,7 @@ type Tree struct {
 	mu       sync.Mutex
 	names    int64
 	nameData [][2]int64
+	err      error
 }
 
 func OpenAt(r io.ReaderAt, pos int64) (*Tree, error) {
@@ -116,6 +119,54 @@ func (t *Tree) getChildIndex(name string) (int64, error) {
 	}
 
 	return int64(pos), nil
+}
+
+func (t *Tree) Children() iter.Seq2[string, Node] {
+	if err := t.initChildren(); err != nil {
+		t.err = err
+
+		return func(_ func(string, Node) bool) {}
+	}
+
+	return func(yield func(string, Node) bool) {
+		var sb strings.Builder
+
+		nameReader := io.NewSectionReader(t.r, t.names, t.ptrs-t.names)
+		ptrReader := byteio.LittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptrs, t.data-t.ptrs)}
+
+		for _, child := range t.nameData {
+			_, err := io.CopyN(&sb, nameReader, child[1])
+			if err != nil {
+				t.err = err
+
+				return
+			}
+
+			ptr, _, err := ptrReader.ReadInt64()
+			if err != nil {
+				t.err = err
+
+				return
+			}
+
+			childNode, err := OpenAt(t.r, ptr)
+			if err != nil {
+				t.err = err
+
+				return
+			}
+
+			if !yield(sb.String(), childNode) {
+				return
+			}
+
+			sb.Reset()
+		}
+	}
+}
+
+func (t *Tree) Err() error {
+	return t.err
 }
 
 // Errors
