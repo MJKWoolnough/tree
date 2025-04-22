@@ -84,8 +84,11 @@ func writeNode(w *byteio.StickyLittleEndianWriter, node Node) {
 	}
 
 	if startChildren != w.Count {
-		w.WriteUint64(uint64(startChildren))
-		w.WriteUint64(uint64(startData))
+		startSizes := w.Count
+
+		w.WriteUintX(uint64(startData - startChildren))
+		w.WriteUintX(uint64(startSizes - startData))
+		w.WriteUint8(uint8(w.Count - startSizes))
 	}
 }
 

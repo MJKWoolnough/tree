@@ -71,9 +71,12 @@ func (t *Tree) init() error {
 		return nil
 	}
 
-	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptr-16, 16)}
-	t.children = sr.ReadInt64()
-	t.data = sr.ReadInt64()
+	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptr-1, 1)}
+	size := sr.ReadUint8()
+	sr.Reader = io.NewSectionReader(t.r, t.ptr-1-int64(size), 16)
+
+	t.children = int64(sr.ReadUintX())
+	t.data = int64(sr.ReadUintX())
 
 	if sr.Err != nil {
 		return sr.Err
