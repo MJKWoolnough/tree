@@ -24,19 +24,27 @@ type Tree struct {
 }
 
 func OpenAt(r io.ReaderAt, pos int64) *Tree {
-	return &Tree{r: r, ptr: pos}
+	if pos == 0 {
+		r = nil
+	}
+
+	return &Tree{r: r, ptr: pos, data: -1}
 }
 
 func (t *Tree) WriteTo(w io.Writer) (int64, error) {
-	if t.ptr == 0 {
+	if t.r == nil {
 		return 0, nil
+	}
+
+	if err := t.initJustData(); err != nil {
+		return 0, err
 	}
 
 	return io.Copy(w, io.NewSectionReader(t.r, t.data, t.ptr-t.data))
 }
 
 func (t *Tree) Child(name string) (*Tree, error) {
-	if t.ptr == 0 {
+	if t.r == nil {
 		return nil, ErrNotFound
 	}
 
@@ -67,28 +75,47 @@ func (t *Tree) init() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if t.nameData != nil {
-		return nil
-	}
-
-	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptr-1, 1)}
-	t.ptr -= 1 + int64(sr.ReadUint8())
-	sr.Reader = io.NewSectionReader(t.r, t.ptr, 16)
-
-	childrenSize := int64(sr.ReadUintX())
-	dataSize := int64(sr.ReadUintX())
-
-	t.data = t.ptr - dataSize
-	t.children = t.data - childrenSize
-
-	if sr.Err != nil {
-		return sr.Err
+	if err := t.initData(); err != nil {
+		return err
 	}
 
 	return t.initChildren()
 }
 
+func (t *Tree) initJustData() error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	return t.initData()
+}
+
+func (t *Tree) initData() error {
+	if t.data > -1 {
+		return nil
+	}
+
+	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptr-1, 1)}
+	sizes := int64(sr.ReadUint8())
+	sr.Reader = io.NewSectionReader(t.r, t.ptr-1-sizes, sizes)
+	childrenSize := int64(sr.ReadUintX())
+	dataSize := int64(sr.ReadUintX())
+
+	if sr.Err != nil {
+		return sr.Err
+	}
+
+	t.ptr -= 1 + sizes
+	t.data = t.ptr - dataSize
+	t.children = t.data - childrenSize
+
+	return nil
+}
+
 func (t *Tree) initChildren() error {
+	if t.nameData != nil {
+		return nil
+	}
+
 	var nameData [][2]int64
 	var start int64
 
@@ -112,7 +139,7 @@ func (t *Tree) initChildren() error {
 	t.names = t.children + sr.Count
 	t.ptrs = t.names + start
 
-	return nil
+	return sr.Err
 }
 
 func (t *Tree) getChildIndex(name string) (int64, error) {
@@ -145,7 +172,7 @@ func (t *Tree) getChildIndex(name string) (int64, error) {
 func noChildren(_ func(string, Node) bool) {}
 
 func (t *Tree) Children() iter.Seq2[string, Node] {
-	if t.ptr == 0 {
+	if t.r == nil {
 		return noChildren
 	}
 
