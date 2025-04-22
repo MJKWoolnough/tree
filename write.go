@@ -1,9 +1,13 @@
 package tree
 
 import (
+	"bytes"
+	"errors"
 	"io"
 	"iter"
+	"slices"
 	"sort"
+	"unsafe"
 
 	"vimagination.zapto.org/byteio"
 )
@@ -36,6 +40,17 @@ func writeNode(w *byteio.StickyLittleEndianWriter, node Node) {
 	var c children
 
 	for name, childNode := range node.Children() {
+		cn := child{name: name}
+		childPos, found := slices.BinarySearchFunc(c, cn, func(a, b child) int {
+			return bytes.Compare(unsafe.Slice(unsafe.StringData(a.name), len(a.name)), unsafe.Slice(unsafe.StringData(b.name), len(b.name)))
+		})
+
+		if found {
+			w.Err = ErrDuplicateChildName
+
+			return
+		}
+
 		start := w.Count
 
 		writeNode(w, childNode)
@@ -44,12 +59,12 @@ func writeNode(w *byteio.StickyLittleEndianWriter, node Node) {
 			return
 		}
 
-		pos := w.Count
-		if start == pos {
-			pos = 0
+		cn.pos = w.Count
+		if start == cn.pos {
+			cn.pos = 0
 		}
 
-		c = append(c, child{name: name, pos: pos})
+		c = slices.Insert(c, childPos, cn)
 	}
 
 	startChildren := w.Count
@@ -95,3 +110,8 @@ func writeChildren(w *byteio.StickyLittleEndianWriter, c children) {
 		w.WriteInt64(child.pos)
 	}
 }
+
+// Errors
+var (
+	ErrDuplicateChildName = errors.New("duplicate child name")
+)
