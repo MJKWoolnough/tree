@@ -28,12 +28,24 @@ func OpenAt(r io.ReaderAt, pos int64) *Tree {
 }
 
 func (t *Tree) WriteTo(w io.Writer) (int64, error) {
+	if t.ptr == 0 {
+		return 0, nil
+	}
+
 	return io.Copy(w, io.NewSectionReader(t.r, t.data, t.ptr-t.data-16))
 }
 
 func (t *Tree) Child(name string) (*Tree, error) {
+	if t.ptr == 0 {
+		return nil, ErrNotFound
+	}
+
 	if err := t.init(); err != nil {
 		return nil, err
+	}
+
+	if t.children == t.data {
+		return nil, ErrNotFound
 	}
 
 	pos, err := t.getChildIndex(name)
@@ -124,11 +136,21 @@ func (t *Tree) getChildIndex(name string) (int64, error) {
 	return int64(pos), nil
 }
 
+func noChildren(_ func(string, Node) bool) {}
+
 func (t *Tree) Children() iter.Seq2[string, Node] {
+	if t.ptr == 0 {
+		return noChildren
+	}
+
 	if err := t.init(); err != nil {
 		t.err = err
 
-		return func(_ func(string, Node) bool) {}
+		return noChildren
+	}
+
+	if t.children == t.data {
+		return noChildren
 	}
 
 	return t.iterChildren

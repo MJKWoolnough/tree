@@ -36,13 +36,20 @@ func writeNode(w *byteio.StickyLittleEndianWriter, node Node) {
 	var c children
 
 	for name, childNode := range node.Children() {
+		start := w.Count
+
 		writeNode(w, childNode)
 
 		if w.Err != nil {
 			return
 		}
 
-		c = append(c, child{name: name, pos: w.Count})
+		pos := w.Count
+		if start == pos {
+			pos = 0
+		}
+
+		c = append(c, child{name: name, pos: pos})
 	}
 
 	startChildren := w.Count
@@ -61,11 +68,17 @@ func writeNode(w *byteio.StickyLittleEndianWriter, node Node) {
 		return
 	}
 
-	w.WriteUint64(uint64(startChildren))
-	w.WriteUint64(uint64(startData))
+	if startChildren != w.Count {
+		w.WriteUint64(uint64(startChildren))
+		w.WriteUint64(uint64(startData))
+	}
 }
 
 func writeChildren(w *byteio.StickyLittleEndianWriter, c children) {
+	if len(c) == 0 {
+		return
+	}
+
 	sort.Slice(c, c.Less)
 
 	for _, child := range c {
