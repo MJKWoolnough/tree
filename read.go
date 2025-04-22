@@ -93,7 +93,7 @@ func (t *Tree) initChildren() error {
 
 	for {
 		l := int64(sr.ReadUintX())
-		if l == 0 {
+		if l == 0 && len(nameData) > 0 {
 			break
 		}
 
