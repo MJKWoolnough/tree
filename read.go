@@ -32,15 +32,12 @@ func OpenAt(r io.ReaderAt, pos int64) *Tree {
 }
 
 func (t *Tree) WriteTo(w io.Writer) (int64, error) {
-	if t.r == nil {
-		return 0, nil
-	}
-
-	if err := t.initJustData(); err != nil {
+	r, err := t.Reader()
+	if err != nil {
 		return 0, err
 	}
 
-	return io.Copy(w, io.NewSectionReader(t.r, t.data, t.ptr-t.data))
+	return io.Copy(w, r)
 }
 
 func (t *Tree) Child(name string) (*Tree, error) {
@@ -220,6 +217,24 @@ func (t *Tree) iterChildren(yield func(string, Node) bool) {
 
 func (t *Tree) Err() error {
 	return t.err
+}
+
+type empty struct{}
+
+func (empty) Read(_ []byte) (int, error) {
+	return 0, io.EOF
+}
+
+func (t *Tree) Reader() (io.Reader, error) {
+	if t.r == nil {
+		return empty{}, nil
+	}
+
+	if err := t.initJustData(); err != nil {
+		return nil, err
+	}
+
+	return io.NewSectionReader(t.r, t.data, t.ptr-t.data), nil
 }
 
 // Errors
