@@ -15,6 +15,13 @@ func TestOpenAt(t *testing.T) {
 		{
 			children: []node{
 				{
+					name: "",
+				},
+			},
+		},
+		{
+			children: []node{
+				{
 					name: "Child1",
 				},
 			},
