@@ -18,7 +18,6 @@ type Tree struct {
 	children, ptrs, data, ptr int64
 
 	mu       sync.Mutex
-	names    int64
 	nameData [][2]int64
 	err      error
 }
@@ -130,7 +129,11 @@ func (t *Tree) initChildren() error {
 
 	t.nameData = nameData
 	t.ptrs = t.data - t.children - int64(len(nameData))*8
-	t.names = t.ptrs - start
+	namesStart := t.ptrs - start
+
+	for n := range nameData {
+		nameData[n][0] += namesStart
+	}
 
 	return sr.Err
 }
@@ -185,7 +188,8 @@ func (t *Tree) Children() iter.Seq2[string, Node] {
 func (t *Tree) iterChildren(yield func(string, Node) bool) {
 	var sb strings.Builder
 
-	nameReader := io.NewSectionReader(t.r, t.names, t.ptrs-t.names)
+	namesStart := t.nameData[0][0]
+	nameReader := io.NewSectionReader(t.r, namesStart, t.ptrs-namesStart)
 	ptrReader := byteio.LittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptrs, t.data-t.ptrs)}
 
 	for _, child := range t.nameData {
