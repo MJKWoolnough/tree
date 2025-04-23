@@ -37,39 +37,7 @@ func (c children) Less(i, j int) bool {
 }
 
 func writeNode(w *byteio.StickyLittleEndianWriter, node Node) {
-	var c children
-
-	for name, childNode := range node.Children() {
-		cn := child{name: name}
-		childPos, found := slices.BinarySearchFunc(c, cn, func(a, b child) int {
-			return bytes.Compare(unsafe.Slice(unsafe.StringData(a.name), len(a.name)), unsafe.Slice(unsafe.StringData(b.name), len(b.name)))
-		})
-
-		if found {
-			w.Err = ErrDuplicateChildName
-
-			return
-		}
-
-		start := w.Count
-
-		writeNode(w, childNode)
-
-		if w.Err != nil {
-			return
-		}
-
-		cn.pos = w.Count
-		if start == cn.pos {
-			cn.pos = 0
-		}
-
-		c = slices.Insert(c, childPos, cn)
-	}
-
-	start := w.Count
-
-	sizeChildren := writeChildren(w, c)
+	start, sizeChildren := getAndWriteChildren(w, node)
 
 	if w.Err != nil {
 		return
@@ -103,6 +71,42 @@ func writeNode(w *byteio.StickyLittleEndianWriter, node Node) {
 
 		w.WriteUint8(toWrite | uint8(w.Count-startSizes))
 	}
+}
+
+func getAndWriteChildren(w *byteio.StickyLittleEndianWriter, node Node) (int64, int64) {
+	var c children
+
+	for name, childNode := range node.Children() {
+		cn := child{name: name}
+		childPos, found := slices.BinarySearchFunc(c, cn, func(a, b child) int {
+			return bytes.Compare(unsafe.Slice(unsafe.StringData(a.name), len(a.name)), unsafe.Slice(unsafe.StringData(b.name), len(b.name)))
+		})
+
+		if found {
+			w.Err = ErrDuplicateChildName
+
+			return 0, 0
+		}
+
+		start := w.Count
+
+		writeNode(w, childNode)
+
+		if w.Err != nil {
+			return 0, 0
+		}
+
+		cn.pos = w.Count
+		if start == cn.pos {
+			cn.pos = 0
+		}
+
+		c = slices.Insert(c, childPos, cn)
+	}
+
+	start := w.Count
+
+	return start, writeChildren(w, c)
 }
 
 func writeChildren(w *byteio.StickyLittleEndianWriter, c children) int64 {
