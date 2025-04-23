@@ -214,6 +214,9 @@ func (t *Tree) iterChildren(yield func(string, Node) bool) {
 
 		ptr, _, err := ptrReader.ReadInt64()
 		if err != nil {
+			t.mu.Lock()
+			defer t.mu.Unlock()
+
 			t.err = err
 
 			return
@@ -228,6 +231,9 @@ func (t *Tree) iterChildren(yield func(string, Node) bool) {
 }
 
 func (t *Tree) Err() error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	return t.err
 }
 
