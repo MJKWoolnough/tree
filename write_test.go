@@ -2,6 +2,7 @@ package tree
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"iter"
 	"testing"
@@ -33,6 +34,7 @@ func TestWriteTree(t *testing.T) {
 	for n, test := range [...]struct {
 		Input  node
 		Output []byte
+		Error  error
 	}{
 		{},
 		{
@@ -83,11 +85,24 @@ func TestWriteTree(t *testing.T) {
 			},
 			Output: []byte{'q', 'w', 'e', 'r', 't', 'y', 0, 6, 2, '1', '2', '3', 0, 3, 2, 'C', 'h', 'i', 'l', 'd', '1', 'c', 'h', 'i', 'l', 'd', '-', '2', 15, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 6, 7, 'a', 'b', 'c', 2, 3, 2},
 		},
+		{
+			Input: node{
+				children: []node{
+					{
+						name: "Child1",
+					},
+					{
+						name: "Child1",
+					},
+				},
+			},
+			Error: ErrDuplicateChildName,
+		},
 	} {
 		var buf bytes.Buffer
 
-		if err := WriteTree(&buf, &test.Input); err != nil {
-			t.Errorf("test %d: unexpected error: %s", n+1, err)
+		if err := WriteTree(&buf, &test.Input); !errors.Is(err, test.Error) {
+			t.Errorf("test %d: expected error %q, got %q", n+1, test.Error, err)
 		} else if written := buf.Bytes(); !bytes.Equal(written, test.Output) {
 			t.Errorf("test %d: expecting to have written %v, wrote %v", n+1, test.Output, written)
 		}
