@@ -67,9 +67,9 @@ func writeNode(w *byteio.StickyLittleEndianWriter, node Node) {
 		c = slices.Insert(c, childPos, cn)
 	}
 
-	startChildren := w.Count
+	start := w.Count
 
-	writeChildren(w, c)
+	sizeChildren := writeChildren(w, c)
 
 	if w.Err != nil {
 		return
@@ -83,27 +83,21 @@ func writeNode(w *byteio.StickyLittleEndianWriter, node Node) {
 		return
 	}
 
-	if startChildren != w.Count {
+	if start != w.Count {
 		startSizes := w.Count
 
-		w.WriteUintX(uint64(startData - startChildren))
+		w.WriteUintX(uint64(sizeChildren))
 		w.WriteUintX(uint64(startSizes - startData))
 		w.WriteUint8(uint8(w.Count - startSizes))
 	}
 }
 
-func writeChildren(w *byteio.StickyLittleEndianWriter, c children) {
+func writeChildren(w *byteio.StickyLittleEndianWriter, c children) int64 {
 	if len(c) == 0 {
-		return
+		return 0
 	}
 
 	sort.Slice(c, c.Less)
-
-	for _, child := range c {
-		w.WriteUintX(uint64(len(child.name)))
-	}
-
-	w.WriteUint8(0)
 
 	for _, child := range c {
 		w.WriteString(child.name)
@@ -112,6 +106,14 @@ func writeChildren(w *byteio.StickyLittleEndianWriter, c children) {
 	for _, child := range c {
 		w.WriteInt64(child.pos)
 	}
+
+	sizeStart := w.Count
+
+	for _, child := range c {
+		w.WriteUintX(uint64(len(child.name)))
+	}
+
+	return w.Count - sizeStart
 }
 
 // Errors

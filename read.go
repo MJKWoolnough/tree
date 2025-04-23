@@ -103,7 +103,7 @@ func (t *Tree) initData() error {
 
 	t.ptr -= 1 + sizes
 	t.data = t.ptr - dataSize
-	t.children = t.data - childrenSize
+	t.children = childrenSize
 
 	return nil
 }
@@ -116,14 +116,10 @@ func (t *Tree) initChildren() error {
 	var nameData [][2]int64
 	var start int64
 
-	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(t.r, t.children, t.data-t.children)}
+	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(t.r, t.data-t.children, t.children)}
 
-	for {
+	for sr.Count < t.children {
 		l := int64(sr.ReadUintX())
-		if l == 0 && len(nameData) > 0 {
-			break
-		}
-
 		nameData = append(nameData, [2]int64{start, l})
 		start += l
 	}
@@ -133,8 +129,8 @@ func (t *Tree) initChildren() error {
 	}
 
 	t.nameData = nameData
-	t.names = t.children + sr.Count
-	t.ptrs = t.names + start
+	t.ptrs = t.data - t.children - int64(len(nameData))*8
+	t.names = t.ptrs - start
 
 	return sr.Err
 }
