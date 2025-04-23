@@ -9,25 +9,25 @@ import (
 
 func TestOpenAt(t *testing.T) {
 	for n, test := range [...]node{
-		{},
-		{
+		{}, // 1
+		{ // 2
 			data: []byte("ABC"),
 		},
-		{
+		{ // 3
 			children: []node{
 				{
 					name: "",
 				},
 			},
 		},
-		{
+		{ // 4
 			children: []node{
 				{
 					name: "Child1",
 				},
 			},
 		},
-		{
+		{ // 5
 			children: []node{
 				{
 					name: "Child1",
@@ -35,7 +35,7 @@ func TestOpenAt(t *testing.T) {
 				},
 			},
 		},
-		{
+		{ // 6
 			children: []node{
 				{
 					name: "Child2",
@@ -43,7 +43,7 @@ func TestOpenAt(t *testing.T) {
 				},
 			},
 		},
-		{
+		{ // 7
 			children: []node{
 				{
 					name: "Child2",
@@ -133,35 +133,35 @@ Loop:
 		data   []byte
 		errors []error
 	}{
-		{
+		{ // 1
 			data: []byte("MNO"),
 		},
-		{
+		{ // 2
 			key:    []string{"A1"},
 			data:   []byte("123"),
 			errors: []error{nil},
 		},
-		{
+		{ // 3
 			key:    []string{"A1", "B1"},
 			data:   []byte("456"),
 			errors: []error{nil, nil},
 		},
-		{
+		{ // 4
 			key:    []string{"A1", "B2"},
 			data:   []byte("789"),
 			errors: []error{nil, nil},
 		},
-		{
+		{ // 5
 			key:    []string{"A2", "B2"},
 			data:   []byte("JKL"),
 			errors: []error{nil, nil},
 		},
-		{
+		{ // 6
 			key:    []string{"A2", "B3"},
 			data:   []byte("JKL"),
 			errors: []error{nil, ErrNotFound},
 		},
-		{
+		{ // 7
 			key:    []string{"A2", "B2", "C1"},
 			data:   []byte("JKL"),
 			errors: []error{nil, nil, ErrNotFound},

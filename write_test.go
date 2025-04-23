@@ -36,14 +36,14 @@ func TestSerialise(t *testing.T) {
 		Output []byte
 		Error  error
 	}{
-		{},
-		{
+		{}, // 1
+		{ // 2
 			Input: node{
 				data: []byte("ABC"),
 			},
 			Output: []byte{'A', 'B', 'C', 3, 0x20 | 1},
 		},
-		{
+		{ // 3
 			Input: node{
 				children: []node{
 					{
@@ -54,7 +54,7 @@ func TestSerialise(t *testing.T) {
 			},
 			Output: []byte{'1', '2', '3', 3, 0x20 | 1, 'C', 'h', 'i', 'l', 'd', '1', 5, 0, 0, 0, 0, 0, 0, 0, 6, 1, 0x40 | 1},
 		},
-		{
+		{ // 4
 			Input: node{
 				children: []node{
 					{
@@ -69,7 +69,7 @@ func TestSerialise(t *testing.T) {
 			},
 			Output: []byte{'1', '2', '3', 3, 0x20 | 1, 'q', 'w', 'e', 'r', 't', 'y', 6, 0x20 | 1, 'C', 'h', 'i', 'l', 'd', '1', 'c', 'h', 'i', 'l', 'd', '-', '2', 5, 0, 0, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 0, 0, 6, 7, 2, 0x40 | 1},
 		},
-		{
+		{ // 5
 			Input: node{
 				children: []node{
 					{
@@ -85,7 +85,7 @@ func TestSerialise(t *testing.T) {
 			},
 			Output: []byte{'q', 'w', 'e', 'r', 't', 'y', 6, 0x20 | 1, '1', '2', '3', 3, 0x20 | 1, 'C', 'h', 'i', 'l', 'd', '1', 'c', 'h', 'i', 'l', 'd', '-', '2', 13, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 6, 7, 'a', 'b', 'c', 2, 3, 0x60 | 2},
 		},
-		{
+		{ // 6
 			Input: node{
 				children: []node{
 					{
