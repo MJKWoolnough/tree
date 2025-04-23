@@ -30,7 +30,7 @@ func (nd *node) Children() iter.Seq2[string, Node] {
 	}
 }
 
-func TestWriteTree(t *testing.T) {
+func TestSerialise(t *testing.T) {
 	for n, test := range [...]struct {
 		Input  node
 		Output []byte
@@ -101,7 +101,7 @@ func TestWriteTree(t *testing.T) {
 	} {
 		var buf bytes.Buffer
 
-		if err := WriteTree(&buf, &test.Input); !errors.Is(err, test.Error) {
+		if err := Serialise(&buf, &test.Input); !errors.Is(err, test.Error) {
 			t.Errorf("test %d: expected error %v, got %v", n+1, test.Error, err)
 		} else if written := buf.Bytes(); !bytes.Equal(written, test.Output) {
 			t.Errorf("test %d: expecting to have written %v, wrote %v", n+1, test.Output, written)

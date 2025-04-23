@@ -55,7 +55,7 @@ func TestOpenAt(t *testing.T) {
 	} {
 		var buf bytes.Buffer
 
-		WriteTree(&buf, &test)
+		Serialise(&buf, &test)
 
 		tree := readTree(OpenAt(bytes.NewReader(buf.Bytes()), int64(buf.Len())))
 
@@ -89,7 +89,7 @@ func readTree(t Node) node {
 func TestChild(t *testing.T) {
 	var buf bytes.Buffer
 
-	WriteTree(&buf, &node{
+	Serialise(&buf, &node{
 		children: []node{
 			{
 				name: "A1",

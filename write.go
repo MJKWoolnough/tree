@@ -17,7 +17,7 @@ type Node interface {
 	io.WriterTo
 }
 
-func WriteTree(w io.Writer, root Node) error {
+func Serialise(w io.Writer, root Node) error {
 	sw := byteio.StickyLittleEndianWriter{Writer: w}
 
 	writeNode(&sw, root)
