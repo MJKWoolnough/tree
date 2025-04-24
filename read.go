@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"iter"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -28,6 +29,40 @@ func OpenAt(r io.ReaderAt, pos int64) *Tree {
 	}
 
 	return &Tree{r: r, ptr: pos, data: -1}
+}
+
+type TreeCloser struct {
+	Tree
+	io.Closer
+}
+
+func OpenFile(path string) (*TreeCloser, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	pos, err := f.Seek(io.SeekEnd, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		r io.ReaderAt = f
+		c io.Closer   = f
+	)
+
+	if pos == 0 {
+		f.Close()
+
+		r = nil
+		c = io.NopCloser(nil)
+	}
+
+	return &TreeCloser{
+		Tree:   Tree{r: r, ptr: pos, data: -1},
+		Closer: c,
+	}, nil
 }
 
 func (t *Tree) WriteTo(w io.Writer) (int64, error) {
