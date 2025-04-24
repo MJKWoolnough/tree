@@ -1,0 +1,192 @@
+package tree
+
+import (
+	"bytes"
+	"errors"
+	"reflect"
+	"testing"
+)
+
+func TestOpenMem(t *testing.T) {
+	for n, test := range [...]node{
+		{}, // 1
+		{ // 2
+			data: []byte("ABC"),
+		},
+		{ // 3
+			children: []node{
+				{
+					name: "",
+				},
+			},
+		},
+		{ // 4
+			children: []node{
+				{
+					name: "Child1",
+				},
+			},
+		},
+		{ // 5
+			children: []node{
+				{
+					name: "Child1",
+					data: []byte("123"),
+				},
+			},
+		},
+		{ // 6
+			children: []node{
+				{
+					name: "Child2",
+					data: []byte("456"),
+				},
+			},
+		},
+		{ // 7
+			children: []node{
+				{
+					name: "Child1",
+					data: []byte("123"),
+				},
+				{
+					name: "Child2",
+					data: []byte("456"),
+				},
+			},
+		},
+		{ // 8
+			children: []node{
+				{
+					name: "Child2",
+					data: []byte("456"),
+				},
+			},
+			data: []byte("ABC"),
+		},
+	} {
+		var buf bytes.Buffer
+
+		Serialise(&buf, &test)
+
+		node, err := OpenMem(buf.Bytes())
+		if err != nil {
+			t.Fatalf("test %d: expected error: %s", n+1, err)
+		}
+
+		tree := readTree(node)
+
+		if !reflect.DeepEqual(test, tree) {
+			t.Errorf("test %d: no match", n+1)
+		}
+	}
+}
+
+func TestMemChild(t *testing.T) {
+	var buf bytes.Buffer
+
+	Serialise(&buf, &node{
+		children: []node{
+			{
+				name: "A1",
+				data: []byte("123"),
+				children: []node{
+					{
+						name: "B1",
+						data: []byte("456"),
+					},
+					{
+						name: "B2",
+						data: []byte("789"),
+					},
+					{
+						name: "B3",
+						data: []byte("ABC"),
+					},
+				},
+			},
+			{
+				name: "A2",
+				data: []byte("DEF"),
+				children: []node{
+					{
+						name: "B1",
+						data: []byte("GHI"),
+					},
+					{
+						name: "B2",
+						data: []byte("JKL"),
+					},
+				},
+			},
+		},
+		data: []byte("MNO"),
+	})
+
+Loop:
+	for n, test := range [...]struct {
+		key    []string
+		data   []byte
+		errors []error
+	}{
+		{ // 1
+			data: []byte("MNO"),
+		},
+		{ // 2
+			key:    []string{"A1"},
+			data:   []byte("123"),
+			errors: []error{nil},
+		},
+		{ // 3
+			key:    []string{"A1", "B1"},
+			data:   []byte("456"),
+			errors: []error{nil, nil},
+		},
+		{ // 4
+			key:    []string{"A1", "B2"},
+			data:   []byte("789"),
+			errors: []error{nil, nil},
+		},
+		{ // 5
+			key:    []string{"A2", "B2"},
+			data:   []byte("JKL"),
+			errors: []error{nil, nil},
+		},
+		{ // 6
+			key:    []string{"A2", "B3"},
+			data:   []byte("JKL"),
+			errors: []error{nil, ErrNotFound},
+		},
+		{ // 7
+			key:    []string{"A2", "B2", "C1"},
+			data:   []byte("JKL"),
+			errors: []error{nil, nil, ErrNotFound},
+		},
+	} {
+		node, err := OpenMem(buf.Bytes())
+		if err != nil {
+			t.Fatalf("test %d: expected error: %s", n+1, err)
+		}
+
+		for m := range test.key {
+			child, err := node.Child(test.key[m])
+			if !errors.Is(err, test.errors[m]) {
+				t.Errorf("test %d.%d: expecting error %v, got %v", n+1, m+1, test.errors[m], err)
+			}
+
+			if err != nil {
+				continue Loop
+			}
+
+			node = child
+		}
+
+		var data bytes.Buffer
+
+		node.WriteTo(&data)
+
+		if !bytes.Equal(data.Bytes(), test.data) {
+			t.Errorf("test %d: expecting data %q, got %q", n+1, test.data, data.Bytes())
+		}
+	}
+}
