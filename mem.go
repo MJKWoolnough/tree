@@ -23,9 +23,7 @@ func OpenMemAt(data []byte, pos int64) (*MemTree, error) {
 		return &MemTree{}, nil
 	}
 
-	r := bytes.NewReader(data)
-
-	childrenSize, dataSize, sizes, err := readSizes(r, pos)
+	childrenSize, dataSize, sizes, err := readSizes(bytes.NewReader(data), pos)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +36,7 @@ func OpenMemAt(data []byte, pos int64) (*MemTree, error) {
 	}
 
 	if childrenSize > 0 {
-		if err := m.loadChildren(r, data, dataStart-childrenSize, childrenSize); err != nil {
+		if err := m.loadChildren(data, dataStart-childrenSize, childrenSize); err != nil {
 			return nil, err
 		}
 	}
@@ -46,8 +44,8 @@ func OpenMemAt(data []byte, pos int64) (*MemTree, error) {
 	return m, nil
 }
 
-func (m *MemTree) loadChildren(r io.ReaderAt, data []byte, start, length int64) error {
-	nameData, err := readChildNameSizes(r, start, length)
+func (m *MemTree) loadChildren(data []byte, start, length int64) error {
+	nameData, err := readChildNameSizes(bytes.NewReader(data[start:start+length]), length)
 	if err != nil {
 		return err
 	}

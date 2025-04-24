@@ -164,7 +164,7 @@ func (t *Tree) initChildren() error {
 		return nil
 	}
 
-	nameData, err := readChildNameSizes(t.r, t.data-t.children, t.children)
+	nameData, err := readChildNameSizes(io.NewSectionReader(t.r, t.data-t.children, t.children), t.children)
 	if err != nil {
 		return err
 	}
@@ -181,11 +181,11 @@ func (t *Tree) initChildren() error {
 	return nil
 }
 
-func readChildNameSizes(r io.ReaderAt, start, length int64) ([][2]int64, error) {
+func readChildNameSizes(r io.Reader, length int64) ([][2]int64, error) {
 	var nameData [][2]int64
 	var nextStart int64
 
-	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(r, start, length)}
+	sr := byteio.StickyLittleEndianReader{Reader: r}
 
 	for sr.Count < length {
 		l := int64(sr.ReadUintX())
