@@ -8,63 +8,7 @@ import (
 )
 
 func TestOpenMem(t *testing.T) {
-	for n, test := range [...]node{
-		{}, // 1
-		{ // 2
-			data: []byte("ABC"),
-		},
-		{ // 3
-			children: []node{
-				{
-					name: "",
-				},
-			},
-		},
-		{ // 4
-			children: []node{
-				{
-					name: "Child1",
-				},
-			},
-		},
-		{ // 5
-			children: []node{
-				{
-					name: "Child1",
-					data: []byte("123"),
-				},
-			},
-		},
-		{ // 6
-			children: []node{
-				{
-					name: "Child2",
-					data: []byte("456"),
-				},
-			},
-		},
-		{ // 7
-			children: []node{
-				{
-					name: "Child1",
-					data: []byte("123"),
-				},
-				{
-					name: "Child2",
-					data: []byte("456"),
-				},
-			},
-		},
-		{ // 8
-			children: []node{
-				{
-					name: "Child2",
-					data: []byte("456"),
-				},
-			},
-			data: []byte("ABC"),
-		},
-	} {
+	for n, test := range openTests {
 		var buf bytes.Buffer
 
 		Serialise(&buf, &test)
@@ -85,84 +29,10 @@ func TestOpenMem(t *testing.T) {
 func TestMemChild(t *testing.T) {
 	var buf bytes.Buffer
 
-	Serialise(&buf, &node{
-		children: []node{
-			{
-				name: "A1",
-				data: []byte("123"),
-				children: []node{
-					{
-						name: "B1",
-						data: []byte("456"),
-					},
-					{
-						name: "B2",
-						data: []byte("789"),
-					},
-					{
-						name: "B3",
-						data: []byte("ABC"),
-					},
-				},
-			},
-			{
-				name: "A2",
-				data: []byte("DEF"),
-				children: []node{
-					{
-						name: "B1",
-						data: []byte("GHI"),
-					},
-					{
-						name: "B2",
-						data: []byte("JKL"),
-					},
-				},
-			},
-		},
-		data: []byte("MNO"),
-	})
+	Serialise(&buf, testChild)
 
 Loop:
-	for n, test := range [...]struct {
-		key    []string
-		data   []byte
-		errors []error
-	}{
-		{ // 1
-			data: []byte("MNO"),
-		},
-		{ // 2
-			key:    []string{"A1"},
-			data:   []byte("123"),
-			errors: []error{nil},
-		},
-		{ // 3
-			key:    []string{"A1", "B1"},
-			data:   []byte("456"),
-			errors: []error{nil, nil},
-		},
-		{ // 4
-			key:    []string{"A1", "B2"},
-			data:   []byte("789"),
-			errors: []error{nil, nil},
-		},
-		{ // 5
-			key:    []string{"A2", "B2"},
-			data:   []byte("JKL"),
-			errors: []error{nil, nil},
-		},
-		{ // 6
-			key:    []string{"A2", "B3"},
-			data:   []byte("JKL"),
-			errors: []error{nil, ErrNotFound},
-		},
-		{ // 7
-			key:    []string{"A2", "B2", "C1"},
-			data:   []byte("JKL"),
-			errors: []error{nil, nil, ErrNotFound},
-		},
-	} {
+	for n, test := range childTests {
 		node, err := OpenMem(buf.Bytes())
 		if err != nil {
 			t.Fatalf("test %d: expected error: %s", n+1, err)

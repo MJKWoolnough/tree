@@ -7,8 +7,8 @@ import (
 	"testing"
 )
 
-func TestOpenAt(t *testing.T) {
-	for n, test := range [...]node{
+var (
+	openTests = [...]node{
 		{}, // 1
 		{ // 2
 			data: []byte("ABC"),
@@ -64,44 +64,8 @@ func TestOpenAt(t *testing.T) {
 			},
 			data: []byte("ABC"),
 		},
-	} {
-		var buf bytes.Buffer
-
-		Serialise(&buf, &test)
-
-		tree := readTree(OpenAt(bytes.NewReader(buf.Bytes()), int64(buf.Len())))
-
-		if !reflect.DeepEqual(test, tree) {
-			t.Errorf("test %d: no match", n+1)
-		}
 	}
-}
-
-func readTree(t Node) node {
-	var n node
-
-	for name, child := range t.Children() {
-		childNode := readTree(child)
-		childNode.name = name
-
-		n.children = append(n.children, childNode)
-	}
-
-	var buf bytes.Buffer
-
-	t.WriteTo(&buf)
-
-	if buf.Len() > 0 {
-		n.data = buf.Bytes()
-	}
-
-	return n
-}
-
-func TestChild(t *testing.T) {
-	var buf bytes.Buffer
-
-	Serialise(&buf, &node{
+	testChild = &node{
 		children: []node{
 			{
 				name: "A1",
@@ -137,10 +101,8 @@ func TestChild(t *testing.T) {
 			},
 		},
 		data: []byte("MNO"),
-	})
-
-Loop:
-	for n, test := range [...]struct {
+	}
+	childTests = [...]struct {
 		key    []string
 		data   []byte
 		errors []error
@@ -178,7 +140,51 @@ Loop:
 			data:   []byte("JKL"),
 			errors: []error{nil, nil, ErrNotFound},
 		},
-	} {
+	}
+)
+
+func TestOpenAt(t *testing.T) {
+	for n, test := range openTests {
+		var buf bytes.Buffer
+
+		Serialise(&buf, &test)
+
+		tree := readTree(OpenAt(bytes.NewReader(buf.Bytes()), int64(buf.Len())))
+
+		if !reflect.DeepEqual(test, tree) {
+			t.Errorf("test %d: no match", n+1)
+		}
+	}
+}
+
+func readTree(t Node) node {
+	var n node
+
+	for name, child := range t.Children() {
+		childNode := readTree(child)
+		childNode.name = name
+
+		n.children = append(n.children, childNode)
+	}
+
+	var buf bytes.Buffer
+
+	t.WriteTo(&buf)
+
+	if buf.Len() > 0 {
+		n.data = buf.Bytes()
+	}
+
+	return n
+}
+
+func TestChild(t *testing.T) {
+	var buf bytes.Buffer
+
+	Serialise(&buf, testChild)
+
+Loop:
+	for n, test := range childTests {
 		node := OpenAt(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
 
 		for m := range test.key {
