@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"io"
@@ -164,7 +165,7 @@ func (t *Tree) initChildren() error {
 		return nil
 	}
 
-	nameData, err := readChildNameSizes(io.NewSectionReader(t.r, t.data-t.children, t.children), t.children)
+	nameData, err := readChildNameSizes(bufio.NewReader(io.NewSectionReader(t.r, t.data-t.children, t.children)), t.children)
 	if err != nil {
 		return err
 	}
