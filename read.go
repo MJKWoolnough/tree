@@ -125,13 +125,26 @@ func (t *Tree) initData() error {
 		return nil
 	}
 
-	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptr-1, 1)}
+	childrenSize, dataSize, sizes, err := readSizes(t.r, t.ptr)
+	if err != nil {
+		return err
+	}
+
+	t.ptr -= 1 + sizes
+	t.data = t.ptr - dataSize
+	t.children = childrenSize
+
+	return nil
+}
+
+func readSizes(r io.ReaderAt, pos int64) (int64, int64, int64, error) {
+	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(r, pos-1, 1)}
 	sizes := int64(sr.ReadUint8())
 	hasChildren := sizes&0x40 > 0
 	hasData := sizes&0x20 > 0
 	sizes &= 0x1f
 
-	sr.Reader = io.NewSectionReader(t.r, t.ptr-1-sizes, sizes)
+	sr.Reader = io.NewSectionReader(r, pos-1-sizes, sizes)
 
 	var childrenSize, dataSize int64
 
@@ -143,46 +156,44 @@ func (t *Tree) initData() error {
 		dataSize = int64(sr.ReadUintX())
 	}
 
-	if sr.Err != nil {
-		return sr.Err
-	}
-
-	t.ptr -= 1 + sizes
-	t.data = t.ptr - dataSize
-	t.children = childrenSize
-
-	return nil
+	return childrenSize, dataSize, sizes, sr.Err
 }
 
 func (t *Tree) initChildren() error {
-	if t.nameData != nil {
+	if t.nameData != nil || t.children == 0 {
 		return nil
 	}
 
-	var nameData [][2]int64
-	var start int64
-
-	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(t.r, t.data-t.children, t.children)}
-
-	for sr.Count < t.children {
-		l := int64(sr.ReadUintX())
-		nameData = append(nameData, [2]int64{start, l})
-		start += l
-	}
-
-	if sr.Err != nil {
-		return sr.Err
+	nameData, err := readChildNameSizes(t.r, t.data-t.children, t.children)
+	if err != nil {
+		return err
 	}
 
 	t.nameData = nameData
 	t.ptrs = t.data - t.children - int64(len(nameData))*8
-	namesStart := t.ptrs - start
+	lastName := nameData[len(nameData)-1]
+	namesStart := t.ptrs - lastName[0] - lastName[1]
 
 	for n := range nameData {
 		nameData[n][0] += namesStart
 	}
 
-	return sr.Err
+	return nil
+}
+
+func readChildNameSizes(r io.ReaderAt, start, length int64) ([][2]int64, error) {
+	var nameData [][2]int64
+	var nextStart int64
+
+	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(r, start, length)}
+
+	for sr.Count < length {
+		l := int64(sr.ReadUintX())
+		nameData = append(nameData, [2]int64{nextStart, l})
+		nextStart += l
+	}
+
+	return nameData, sr.Err
 }
 
 func (t *Tree) getChildIndex(name string) (int64, error) {
