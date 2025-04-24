@@ -46,6 +46,18 @@ func TestOpenAt(t *testing.T) {
 		{ // 7
 			children: []node{
 				{
+					name: "Child1",
+					data: []byte("123"),
+				},
+				{
+					name: "Child2",
+					data: []byte("456"),
+				},
+			},
+		},
+		{ // 8
+			children: []node{
+				{
 					name: "Child2",
 					data: []byte("456"),
 				},
