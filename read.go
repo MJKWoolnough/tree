@@ -83,7 +83,7 @@ func (t *Tree) Child(name string) (*Tree, error) {
 		return nil, err
 	}
 
-	if t.children == t.data {
+	if len(t.nameData) == 0 {
 		return nil, ErrNotFound
 	}
 
@@ -236,7 +236,7 @@ func (t *Tree) Children() iter.Seq2[string, Node] {
 		return noChildren
 	}
 
-	if t.children == t.data {
+	if len(t.nameData) == 0 {
 		return noChildren
 	}
 
