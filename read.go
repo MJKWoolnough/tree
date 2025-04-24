@@ -43,7 +43,7 @@ func OpenFile(path string) (*TreeCloser, error) {
 		return nil, err
 	}
 
-	pos, err := f.Seek(io.SeekEnd, 0)
+	pos, err := f.Seek(0, io.SeekEnd)
 	if err != nil {
 		return nil, err
 	}
