@@ -5,7 +5,6 @@ import (
 	"io"
 	"iter"
 	"slices"
-	"sync/atomic"
 	"unsafe"
 
 	"vimagination.zapto.org/byteio"
@@ -16,7 +15,6 @@ type MemTree struct {
 	data  []byte
 	names []string
 	ptrs  [][]byte
-	err   atomic.Pointer[error]
 }
 
 func OpenMemAt(data []byte, pos int64) (*MemTree, error) {
@@ -111,14 +109,14 @@ func (m *MemTree) Children() iter.Seq2[string, Node] {
 		for n, name := range m.names {
 			ptr, err := readPointer(m.ptrs[n])
 			if err != nil {
-				m.err.Store(&err)
+				yield(name, ChildrenError{err})
 
 				return
 			}
 
 			tree, err := OpenMemAt(m.tree, ptr)
 			if err != nil {
-				m.err.Store(&err)
+				yield(name, ChildrenError{err})
 
 				return
 			}
@@ -128,13 +126,4 @@ func (m *MemTree) Children() iter.Seq2[string, Node] {
 			}
 		}
 	}
-}
-
-func (m *MemTree) Err() error {
-	err := m.err.Load()
-	if err == nil {
-		return nil
-	}
-
-	return *err
 }

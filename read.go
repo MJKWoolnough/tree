@@ -3,14 +3,12 @@ package tree
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"io"
 	"iter"
 	"os"
 	"sort"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"unsafe"
 
 	"vimagination.zapto.org/byteio"
@@ -22,7 +20,6 @@ type Tree struct {
 
 	mu       sync.Mutex
 	nameData [][2]int64
-	err      atomic.Pointer[error]
 }
 
 func OpenAt(r io.ReaderAt, pos int64) *Tree {
@@ -219,7 +216,7 @@ func (t *Tree) getChildIndex(name string) (int64, error) {
 	}
 
 	if !found {
-		return 0, ErrNotFound
+		return 0, ChildNotFoundError(name)
 	}
 
 	return int64(pos), nil
@@ -233,9 +230,7 @@ func (t *Tree) Children() iter.Seq2[string, Node] {
 	}
 
 	if err := t.init(); err != nil {
-		t.err.Store(&err)
-
-		return noChildren
+		return func(yield func(string, Node) bool) { yield("", ChildrenError{err}) }
 	}
 
 	if len(t.nameData) == 0 {
@@ -255,14 +250,14 @@ func (t *Tree) iterChildren(yield func(string, Node) bool) {
 	for _, child := range t.nameData {
 		_, err := io.CopyN(&sb, nameReader, child[1])
 		if err != nil {
-			t.err.Store(&err)
+			yield("", ChildrenError{err})
 
 			return
 		}
 
 		ptr, _, err := ptrReader.ReadInt64()
 		if err != nil {
-			t.err.Store(&err)
+			yield(sb.String(), ChildrenError{err})
 
 			return
 		}
@@ -273,15 +268,6 @@ func (t *Tree) iterChildren(yield func(string, Node) bool) {
 
 		sb.Reset()
 	}
-}
-
-func (t *Tree) Err() error {
-	err := t.err.Load()
-	if err == nil {
-		return nil
-	}
-
-	return *err
 }
 
 type empty struct{}
@@ -302,7 +288,20 @@ func (t *Tree) Reader() (io.Reader, error) {
 	return io.NewSectionReader(t.r, t.data, t.ptr-t.data), nil
 }
 
-// Errors
-var (
-	ErrNotFound = errors.New("child not found")
-)
+type ChildrenError struct {
+	error
+}
+
+func (ChildrenError) Children() iter.Seq2[string, Node] {
+	return noChildren
+}
+
+func (c ChildrenError) WriteTo(_ io.Writer) (int64, error) {
+	return 0, c.error
+}
+
+type ChildNotFoundError string
+
+func (ChildNotFoundError) Error() string {
+	return "child not found"
+}
