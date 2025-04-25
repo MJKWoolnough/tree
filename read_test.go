@@ -3,7 +3,10 @@ package tree
 import (
 	"bytes"
 	"errors"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strconv"
 	"testing"
 )
 
@@ -154,6 +157,40 @@ func TestOpenAt(t *testing.T) {
 		if !reflect.DeepEqual(test, tree) {
 			t.Errorf("test %d: no match", n+1)
 		}
+	}
+}
+
+func TestOpenFile(t *testing.T) {
+	tmp := t.TempDir()
+
+	for n, test := range openTests {
+		path := filepath.Join(tmp, strconv.Itoa(n))
+
+		f, err := os.Create(path)
+		if err != nil {
+			t.Fatalf("test %d: unexpected error creating file (%s): %s", n+1, path, err)
+		}
+
+		if err = Serialise(f, &test); err != nil {
+			t.Fatalf("test %d: unexpected error serialising tree (%s): %s", n+1, path, err)
+		}
+
+		if err = f.Close(); err != nil {
+			t.Fatalf("test %d: unexpected error closing file (%s): %s", n+1, path, err)
+		}
+
+		node, err := OpenFile(path)
+		if err != nil {
+			t.Fatalf("test %d: unexpected error opening tree (%s): %s", n+1, path, err)
+		}
+
+		tree := readTree(node)
+
+		if !reflect.DeepEqual(test, tree) {
+			t.Errorf("test %d: no match", n+1)
+		}
+
+		node.Close()
 	}
 }
 
