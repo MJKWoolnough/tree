@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"unsafe"
 
 	"vimagination.zapto.org/byteio"
@@ -21,7 +22,7 @@ type Tree struct {
 
 	mu       sync.Mutex
 	nameData [][2]int64
-	err      error
+	err      atomic.Pointer[error]
 }
 
 func OpenAt(r io.ReaderAt, pos int64) *Tree {
@@ -232,7 +233,7 @@ func (t *Tree) Children() iter.Seq2[string, Node] {
 	}
 
 	if err := t.init(); err != nil {
-		t.err = err
+		t.err.Store(&err)
 
 		return noChildren
 	}
@@ -254,17 +255,14 @@ func (t *Tree) iterChildren(yield func(string, Node) bool) {
 	for _, child := range t.nameData {
 		_, err := io.CopyN(&sb, nameReader, child[1])
 		if err != nil {
-			t.err = err
+			t.err.Store(&err)
 
 			return
 		}
 
 		ptr, _, err := ptrReader.ReadInt64()
 		if err != nil {
-			t.mu.Lock()
-			defer t.mu.Unlock()
-
-			t.err = err
+			t.err.Store(&err)
 
 			return
 		}
@@ -278,10 +276,12 @@ func (t *Tree) iterChildren(yield func(string, Node) bool) {
 }
 
 func (t *Tree) Err() error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	err := t.err.Load()
+	if err == nil {
+		return nil
+	}
 
-	return t.err
+	return *err
 }
 
 type empty struct{}
