@@ -2,9 +2,9 @@ package tree
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"iter"
+	"reflect"
 	"testing"
 )
 
@@ -96,12 +96,12 @@ func TestSerialise(t *testing.T) {
 					},
 				},
 			},
-			Error: ErrDuplicateChildName,
+			Error: DuplicateChildError{"Child1"},
 		},
 	} {
 		var buf bytes.Buffer
 
-		if err := Serialise(&buf, &test.Input); !errors.Is(err, test.Error) {
+		if err := Serialise(&buf, &test.Input); !reflect.DeepEqual(err, test.Error) {
 			t.Errorf("test %d: expected error %v, got %v", n+1, test.Error, err)
 		} else if written := buf.Bytes(); !bytes.Equal(written, test.Output) {
 			t.Errorf("test %d: expecting to have written %v, wrote %v", n+1, test.Output, written)
