@@ -75,7 +75,7 @@ func (t *Tree) WriteTo(w io.Writer) (int64, error) {
 
 func (t *Tree) Child(name string) (*Tree, error) {
 	if t.r == nil {
-		return nil, ErrNotFound
+		return nil, ChildNotFoundError(name)
 	}
 
 	if err := t.init(); err != nil {
@@ -83,7 +83,7 @@ func (t *Tree) Child(name string) (*Tree, error) {
 	}
 
 	if len(t.nameData) == 0 {
-		return nil, ErrNotFound
+		return nil, ChildNotFoundError(name)
 	}
 
 	pos, err := t.getChildIndex(name)

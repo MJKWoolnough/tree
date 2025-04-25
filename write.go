@@ -114,14 +114,6 @@ func getAndWriteChildren(w *byteio.StickyLittleEndianWriter, node Node) (int64, 
 		c = slices.Insert(c, childPos, cn)
 	}
 
-	if errr, ok := node.(interface{ Err() error }); ok {
-		if err := errr.Err(); err != nil {
-			w.Err = err
-
-			return 0, 0
-		}
-	}
-
 	start := w.Count
 
 	return start, writeChildren(w, c)

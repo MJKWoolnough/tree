@@ -2,7 +2,6 @@ package tree
 
 import (
 	"bytes"
-	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -136,12 +135,12 @@ var (
 		{ // 6
 			key:    []string{"A2", "B3"},
 			data:   []byte("JKL"),
-			errors: []error{nil, ErrNotFound},
+			errors: []error{nil, ChildNotFoundError("B3")},
 		},
 		{ // 7
 			key:    []string{"A2", "B2", "C1"},
 			data:   []byte("JKL"),
-			errors: []error{nil, nil, ErrNotFound},
+			errors: []error{nil, nil, ChildNotFoundError("C1")},
 		},
 	}
 )
@@ -226,7 +225,7 @@ Loop:
 
 		for m := range test.key {
 			child, err := node.Child(test.key[m])
-			if !errors.Is(err, test.errors[m]) {
+			if !reflect.DeepEqual(err, test.errors[m]) {
 				t.Errorf("test %d.%d: expecting error %v, got %v", n+1, m+1, test.errors[m], err)
 			}
 
