@@ -14,6 +14,7 @@ import (
 	"vimagination.zapto.org/byteio"
 )
 
+// Tree represents a Node of a tree backed by an io.ReaderAt.
 type Tree struct {
 	r                         io.ReaderAt
 	children, ptrs, data, ptr int64
@@ -22,6 +23,10 @@ type Tree struct {
 	nameData [][2]int64
 }
 
+// OpenAt opens a Tree from the given io.ReaderAt.
+//
+// The pos should be the length of the data underlying the io.ReaderAt, or a
+// specific Node pointer address within the data.
 func OpenAt(r io.ReaderAt, pos int64) *Tree {
 	if pos == 0 {
 		r = nil
@@ -30,11 +35,13 @@ func OpenAt(r io.ReaderAt, pos int64) *Tree {
 	return &Tree{r: r, ptr: pos, data: -1}
 }
 
+// TreeCloser is a tree that includes a Close method for an opened file.
 type TreeCloser struct {
 	Tree
 	io.Closer
 }
 
+// OpenFile opens a Tree from the given filename.
 func OpenFile(path string) (*TreeCloser, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -64,6 +71,7 @@ func OpenFile(path string) (*TreeCloser, error) {
 	}, nil
 }
 
+// WriteTo writes the Nodes data to the given writer.
 func (t *Tree) WriteTo(w io.Writer) (int64, error) {
 	r, err := t.Reader()
 	if err != nil {
@@ -73,6 +81,10 @@ func (t *Tree) WriteTo(w io.Writer) (int64, error) {
 	return io.Copy(w, r)
 }
 
+// Child attempts to retrive a child Node corresponding to the given name.
+//
+// If no child matches the given name, the returned error will be of type
+// ChildNotFoundError.
 func (t *Tree) Child(name string) (*Tree, error) {
 	if t.r == nil {
 		return nil, ChildNotFoundError(name)
@@ -224,6 +236,10 @@ func (t *Tree) getChildIndex(name string) (int64, error) {
 
 func noChildren(_ func(string, Node) bool) {}
 
+// Children returns an iterator that loops through all of the child Nodes.
+//
+// Read errors will be expressed with a final Node of underlying type
+// ChildrenError.
 func (t *Tree) Children() iter.Seq2[string, Node] {
 	if t.r == nil {
 		return noChildren
@@ -288,20 +304,29 @@ func (t *Tree) Reader() (io.Reader, error) {
 	return io.NewSectionReader(t.r, t.data, t.ptr-t.data), nil
 }
 
+// ChildrenError is a Node and error type that is returned from the Children
+// iterator.
+//
+// It has no children and any attempt to retrieve the data will result in the
+// underlying error to be returned.
 type ChildrenError struct {
 	error
 }
 
+// Children always returns an empty iterator.
 func (ChildrenError) Children() iter.Seq2[string, Node] {
 	return noChildren
 }
 
+// WriteTo always returns the underlying error.
 func (c ChildrenError) WriteTo(_ io.Writer) (int64, error) {
 	return 0, c.error
 }
 
+// ChildNotFoundError contains the name of the child that could not be found.
 type ChildNotFoundError string
 
-func (ChildNotFoundError) Error() string {
-	return "child not found"
+// Error implements the error interface.
+func (c ChildNotFoundError) Error() string {
+	return "child not found: " + string(c)
 }

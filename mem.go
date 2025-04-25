@@ -10,6 +10,7 @@ import (
 	"vimagination.zapto.org/byteio"
 )
 
+// MemTree represents a tree backed by an in-memory byte slice.
 type MemTree struct {
 	tree  []byte
 	data  []byte
@@ -17,6 +18,13 @@ type MemTree struct {
 	ptrs  [][]byte
 }
 
+// OpenMem opens a Tree from the given byte slice.
+func OpenMem(data []byte) (*MemTree, error) {
+	return OpenMemAt(data, int64(len(data)))
+}
+
+// OpenMemAt opens a Tree from the given byte slice, using the given Node
+// pointer instead of using the length of the data.
 func OpenMemAt(data []byte, pos int64) (*MemTree, error) {
 	if pos <= 0 {
 		return &MemTree{}, nil
@@ -64,29 +72,27 @@ func (m *MemTree) loadChildren(data []byte, start, length int64) error {
 	return nil
 }
 
-func OpenMem(data []byte) (*MemTree, error) {
-	return OpenMemAt(data, int64(len(data)))
-}
-
+// WriteTo will pass the Nodes data to the given io.Writer as a single
+// byte-slice.
 func (m *MemTree) WriteTo(w io.Writer) (int64, error) {
-	d, err := m.Data()
-	if err != nil {
-		return 0, err
-	}
-
-	n, err := w.Write(d)
+	n, err := w.Write(m.data)
 
 	return int64(n), err
 }
 
-func (m *MemTree) Data() ([]byte, error) {
-	return m.data, nil
+// Data returns the Nodes data.
+func (m *MemTree) Data() []byte {
+	return m.data
 }
 
+// Child attempts to retrieve a child Node corresponding to the given name.
+//
+// If no child matches the given name, the returned error will be of type
+// ChildNotFoundError.
 func (m *MemTree) Child(name string) (*MemTree, error) {
 	pos, found := slices.BinarySearch(m.names, name)
 	if !found {
-		return nil, ErrNotFound
+		return nil, ChildNotFoundError(name)
 	}
 
 	ptr, err := readPointer(m.ptrs[pos])
@@ -104,6 +110,10 @@ func readPointer(ptr []byte) (int64, error) {
 	return p, err
 }
 
+// Children returns an iterator that loops through all of the child Nodes.
+//
+// Read errors will be expressed with a final Node of underlying type
+// ChildrenError.
 func (m *MemTree) Children() iter.Seq2[string, Node] {
 	return func(yield func(string, Node) bool) {
 		for n, name := range m.names {

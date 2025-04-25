@@ -1,4 +1,5 @@
-package tree
+// Package tree implements a tree serialiser and reader.
+package tree // import "vimagination.zapto.org/tree"
 
 import (
 	"bytes"
@@ -12,11 +13,33 @@ import (
 	"vimagination.zapto.org/byteio"
 )
 
+// Node represents a single node in a Tree.
 type Node interface {
+	// Children returns an iterator that yields a name and Node for each of the
+	// child nodes.
+	//
+	// Yielding the children in a lexically sorted order is recommended,
+	// but not required.
+	//
+	// If an error occurs, the Node may be of type ChildrenError, which in
+	// addition to being a Node also implements the error interface.
 	Children() iter.Seq2[string, Node]
+
+	// WriterTo accepts an io.Writer to which any data stored on the node will be
+	// passed.
 	io.WriterTo
 }
 
+// Serialise writes a tree structure to the given writer.
+//
+// The byte-format for each node is as follows:
+//
+//	Names     []string (stored, in lexical order, without seperators)
+//	Pointers  []int64  (pointer to the end (&Size + 1) of each child node record)
+//	NameSizes []uint64 (lengths of each name, stored as variable-length integers)
+//	Data      []byte
+//	Sizes     []uint64 (size of NamesSizes and Data sections, stored as variable-length integers)
+//	Size      []uint8  (size of the Sizes field)
 func Serialise(w io.Writer, root Node) error {
 	sw := byteio.StickyLittleEndianWriter{Writer: w}
 
@@ -36,8 +59,10 @@ func (c children) Less(i, j int) bool {
 	return c[i].name < c[j].name
 }
 
+// DuplicateChildError is an error that records the duplicated child name.
 type DuplicateChildError []string
 
+// Error implements the error interface.
 func (d DuplicateChildError) Error() string {
 	return "duplicate child name: " + strings.Join(d, "/")
 }
