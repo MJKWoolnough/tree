@@ -98,6 +98,27 @@ func TestSerialise(t *testing.T) {
 			},
 			Error: DuplicateChildError{"Child1"},
 		},
+		{ // 7
+			Input: node{
+				children: []node{
+					{
+						name: "Child1",
+						children: []node{
+							{
+								name: "SubChild1",
+							},
+							{
+								name: "SubChild1",
+							},
+						},
+					},
+					{
+						name: "Child2",
+					},
+				},
+			},
+			Error: DuplicateChildError{"Child1", "SubChild1"},
+		},
 	} {
 		var buf bytes.Buffer
 
