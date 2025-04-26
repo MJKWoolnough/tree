@@ -15,8 +15,8 @@ import (
 
 // Node represents a single node in a Tree.
 type Node interface {
-	// Children returns an iterator that yields a name and Node for each of the
-	// child nodes.
+	// Children returns an iterator that yields a (unique) name and Node for each
+	// of the child nodes.
 	//
 	// Yielding the children in a lexically sorted order is recommended,
 	// but not required.
@@ -34,12 +34,14 @@ type Node interface {
 //
 // The byte-format for each node is as follows:
 //
-//	Names     []string (stored, in lexical order, without seperators)
+//	Names     []string (stored, in lexical order)
 //	Pointers  []int64  (pointer to the end (&Size + 1) of each child node record)
 //	NameSizes []uint64 (lengths of each name, stored as variable-length integers)
 //	Data      []byte
-//	Sizes     []uint64 (size of NamesSizes and Data sections, stored as variable-length integers)
-//	Size      []uint8  (size of the Sizes field)
+//	Sizes     []uint64 (size of NamesSizes and Data sections, stored as variable-length integers; zeros are omitted)
+//	Size      uint8  (lower 5 bits: size of the Sizes field, bit 6: size Data > 0, bit 7: size NameSizes > 0)
+//
+// NB: All slices are stored without seperators.
 func Serialise(w io.Writer, root Node) error {
 	sw := byteio.StickyLittleEndianWriter{Writer: w}
 
