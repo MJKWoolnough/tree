@@ -323,6 +323,11 @@ func (c ChildrenError) WriteTo(_ io.Writer) (int64, error) {
 	return 0, c.error
 }
 
+// Unwrap returns the wrapped error.
+func (c ChildrenError) Unwrap() error {
+	return c.error
+}
+
 // ChildNotFoundError contains the name of the child that could not be found.
 type ChildNotFoundError string
 
