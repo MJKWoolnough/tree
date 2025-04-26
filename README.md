@@ -15,12 +15,14 @@ Serialise writes a tree structure to the given writer.
 
 The byte-format for each node is as follows:
 
-    Names     []string (stored, in lexical order, without seperators)
+    Names     []string (stored, in lexical order)
     Pointers  []int64  (pointer to the end (&Size + 1) of each child node record)
     NameSizes []uint64 (lengths of each name, stored as variable-length integers)
     Data      []byte
-    Sizes     []uint64 (size of NamesSizes and Data sections, stored as variable-length integers)
-    Size      []uint8  (size of the Sizes field)
+    Sizes     []uint64 (size of NamesSizes and Data sections, stored as variable-length integers; zeros are omitted)
+    Size      uint8  (lower 5 bits: size of the Sizes field, bit 6: size Data > 0, bit 7: size NameSizes > 0)
+
+NB: All slices are stored without seperators.
 
 #### type ChildNotFoundError
 
@@ -56,6 +58,13 @@ underlying error to be returned.
 func (ChildrenError) Children() iter.Seq2[string, Node]
 ```
 Children always returns an empty iterator.
+
+#### func (ChildrenError) Unwrap
+
+```go
+func (c ChildrenError) Unwrap() error
+```
+Unwrap returns the wrapped error.
 
 #### func (ChildrenError) WriteTo
 
@@ -141,8 +150,8 @@ WriteTo will pass the Nodes data to the given io.Writer as a single byte-slice.
 
 ```go
 type Node interface {
-	// Children returns an iterator that yields a name and Node for each of the
-	// child nodes.
+	// Children returns an iterator that yields a (unique) name and Node for each
+	// of the child nodes.
 	//
 	// Yielding the children in a lexically sorted order is recommended,
 	// but not required.
