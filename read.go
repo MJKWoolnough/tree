@@ -304,6 +304,32 @@ func (t *Tree) Reader() (io.Reader, error) {
 	return io.NewSectionReader(t.r, t.data, t.ptr-t.data), nil
 }
 
+// DataLen returns the length of the data stored on this Node.
+func (t *Tree) DataLen() (int64, error) {
+	if t.r == nil {
+		return 0, nil
+	}
+
+	if err := t.initJustData(); err != nil {
+		return 0, err
+	}
+
+	return t.ptr - t.data, nil
+}
+
+// NumChildren returns the number of child Node that are attached to this Node.
+func (t *Tree) NumChildren() (int, error) {
+	if t.r == nil {
+		return 0, nil
+	}
+
+	if err := t.init(); err != nil {
+		return 0, err
+	}
+
+	return len(t.nameData), nil
+}
+
 // ChildrenError is a Node and error type that is returned from the Children
 // iterator.
 //
@@ -311,6 +337,11 @@ func (t *Tree) Reader() (io.Reader, error) {
 // underlying error to be returned.
 type ChildrenError struct {
 	error
+}
+
+// NewChildrenError wraps an error to give it the methods of a Node.
+func NewChildrenError(err error) ChildrenError {
+	return ChildrenError{error: err}
 }
 
 // Children always returns an empty iterator.
