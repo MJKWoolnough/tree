@@ -52,6 +52,13 @@ iterator.
 It has no children and any attempt to retrieve the data will result in the
 underlying error to be returned.
 
+#### func  NewChildrenError
+
+```go
+func NewChildrenError(err error) ChildrenError
+```
+NewChildrenError wraps an error to give it the methods of a Node.
+
 #### func (ChildrenError) Children
 
 ```go
@@ -139,6 +146,20 @@ func (m *MemTree) Data() []byte
 ```
 Data returns the Nodes data.
 
+#### func (*MemTree) DataLen
+
+```go
+func (m *MemTree) DataLen() int64
+```
+DataLen returns the length of the data stored on this Node.
+
+#### func (*MemTree) NumChildren
+
+```go
+func (m *MemTree) NumChildren() int
+```
+NumChildren returns the number of child Node that are attached to this Node.
+
 #### func (*MemTree) WriteTo
 
 ```go
@@ -206,6 +227,20 @@ Children returns an iterator that loops through all of the child Nodes.
 
 Read errors will be expressed with a final Node of underlying type
 ChildrenError.
+
+#### func (*Tree) DataLen
+
+```go
+func (t *Tree) DataLen() (int64, error)
+```
+DataLen returns the length of the data stored on this Node.
+
+#### func (*Tree) NumChildren
+
+```go
+func (t *Tree) NumChildren() (int, error)
+```
+NumChildren returns the number of child Node that are attached to this Node.
 
 #### func (*Tree) Reader
 
