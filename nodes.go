@@ -93,3 +93,93 @@ func (Branch) DataLen() int64 {
 func (b Branch) NumChildren() int {
 	return len(b)
 }
+
+type multiNode struct {
+	name  string
+	nodes []Node
+}
+
+type Roots []multiNode
+
+func Merge(nodes ...Node) (Roots, error) {
+	var (
+		b map[string][]Node
+		r Roots
+	)
+
+	for _, node := range nodes {
+		for name, child := range node.Children() {
+			if ce, ok := child.(ChildrenError); ok {
+				return nil, ce.error
+			}
+
+			b[name] = append(b[name], child)
+		}
+	}
+
+	for name, nodes := range b {
+		mn := multiNode{name: name, nodes: nodes}
+		pos, _ := slices.BinarySearchFunc(r, mn, func(a, b multiNode) int {
+			return strings.Compare(a.name, b.name)
+		})
+
+		r = slices.Insert(r, pos, mn)
+	}
+
+	return r, nil
+}
+
+func (r Roots) Children() iter.Seq2[string, Node] {
+	return func(yield func(string, Node) bool) {
+		for _, children := range r {
+			if len(children.nodes) == 1 {
+				if !yield(children.name, children.nodes[0]) {
+					return
+				}
+
+				continue
+			}
+
+			roots, err := Merge(children.nodes...)
+			if err != nil {
+				yield(children.name, ChildrenError{err})
+
+				return
+			}
+
+			yield(children.name, roots)
+		}
+	}
+}
+
+func (Roots) WriteTo(_ io.Writer) (int64, error) {
+	return 0, nil
+}
+
+func (r Roots) Child(name string) (Node, error) {
+	pos, exists := slices.BinarySearchFunc(r, multiNode{name: name}, func(a, b multiNode) int {
+		return strings.Compare(a.name, b.name)
+	})
+
+	if !exists {
+		return nil, ChildNotFoundError(name)
+	}
+
+	if len(r[pos].nodes) == 1 {
+		return r[pos].nodes[0], nil
+	}
+
+	return Merge(r[pos].nodes...)
+}
+
+func (Roots) Data() []byte {
+	return nil
+}
+
+func (Roots) DataLen() int64 {
+	return 0
+}
+
+func (r Roots) NumChildren() int {
+	return len(r)
+}
