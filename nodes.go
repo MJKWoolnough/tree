@@ -118,15 +118,18 @@ func Merge(nodes ...Node) (Roots, error) {
 	}
 
 	for name, nodes := range b {
-		mn := multiNode{name: name, nodes: nodes}
-		pos, _ := slices.BinarySearchFunc(r, mn, func(a, b multiNode) int {
-			return strings.Compare(a.name, b.name)
-		})
+		pos, _ := r.childPos(name)
 
-		r = slices.Insert(r, pos, mn)
+		r = slices.Insert(r, pos, multiNode{name: name, nodes: nodes})
 	}
 
 	return r, nil
+}
+
+func (r Roots) childPos(name string) (int, bool) {
+	return slices.BinarySearchFunc(r, multiNode{name: name}, func(a, b multiNode) int {
+		return strings.Compare(a.name, b.name)
+	})
 }
 
 func (r Roots) Children() iter.Seq2[string, Node] {
@@ -157,10 +160,7 @@ func (Roots) WriteTo(_ io.Writer) (int64, error) {
 }
 
 func (r Roots) Child(name string) (Node, error) {
-	pos, exists := slices.BinarySearchFunc(r, multiNode{name: name}, func(a, b multiNode) int {
-		return strings.Compare(a.name, b.name)
-	})
-
+	pos, exists := r.childPos(name)
 	if !exists {
 		return nil, ChildNotFoundError(name)
 	}
