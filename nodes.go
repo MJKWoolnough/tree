@@ -40,13 +40,14 @@ type nameNode struct {
 	Node
 }
 
+func (n nameNode) compare(m nameNode) int {
+	return strings.Compare(n.Name, m.Name)
+}
+
 type Branch []nameNode
 
 func (b *Branch) Add(name string, node Node) error {
-	pos, exists := slices.BinarySearchFunc(*b, nameNode{Name: name}, func(a, b nameNode) int {
-		return strings.Compare(a.Name, b.Name)
-	})
-
+	pos, exists := slices.BinarySearchFunc(*b, nameNode{Name: name}, nameNode.compare)
 	if exists {
 		return DuplicateChildError{name}
 	}
@@ -99,6 +100,10 @@ type multiNode struct {
 	nodes []Node
 }
 
+func (m multiNode) compare(n multiNode) int {
+	return strings.Compare(m.name, n.name)
+}
+
 type Roots []multiNode
 
 func Merge(nodes ...Node) (Roots, error) {
@@ -127,9 +132,7 @@ func Merge(nodes ...Node) (Roots, error) {
 }
 
 func (r Roots) childPos(name string) (int, bool) {
-	return slices.BinarySearchFunc(r, multiNode{name: name}, func(a, b multiNode) int {
-		return strings.Compare(a.name, b.name)
-	})
+	return slices.BinarySearchFunc(r, multiNode{name: name}, multiNode.compare)
 }
 
 func (r Roots) Children() iter.Seq2[string, Node] {
