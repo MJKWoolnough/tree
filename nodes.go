@@ -129,6 +129,8 @@ type Roots []multiNode
 
 // Merge combines the children from multiple nodes, merging same named
 // children similarly.
+//
+// Changes made to the Nodes after merging will not be recognised.
 func Merge(nodes ...Node) (Roots, error) {
 	var (
 		b map[string][]Node
