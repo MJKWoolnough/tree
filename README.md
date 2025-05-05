@@ -24,6 +24,69 @@ The byte-format for each node is as follows:
 
 NB: All slices are stored without seperators.
 
+#### type Branch
+
+```go
+type Branch []nameNode
+```
+
+Branch is a collection of named Nodes.
+
+#### func (*Branch) Add
+
+```go
+func (b *Branch) Add(name string, node Node) error
+```
+Add adds a named Node to the branch.
+
+No locking takes place, so all children should be added before using the Branch
+Node.
+
+#### func (Branch) Child
+
+```go
+func (b Branch) Child(name string) (Node, error)
+```
+Child attempts to retrieve a child Node corresponding to the given name.
+
+If no child matches the given name, the returned error will be of type
+ChildNotFoundError.
+
+#### func (Branch) Children
+
+```go
+func (b Branch) Children() iter.Seq2[string, Node]
+```
+Children returns an iterator that loops through all of the child Nodes.
+
+#### func (Branch) Data
+
+```go
+func (Branch) Data() []byte
+```
+Data returns the Nodes data.
+
+#### func (Branch) DataLen
+
+```go
+func (Branch) DataLen() int64
+```
+DataLen will always return 0 for a Branch Node.
+
+#### func (Branch) NumChildren
+
+```go
+func (b Branch) NumChildren() int
+```
+NumChildren returns the number of child Nodes that are attached to this Node.
+
+#### func (Branch) WriteTo
+
+```go
+func (Branch) WriteTo(_ io.Writer) (int64, error)
+```
+WriteTo always returns 0, nil for a Branch Node.
+
 #### type ChildNotFoundError
 
 ```go
@@ -95,6 +158,58 @@ func (d DuplicateChildError) Error() string
 ```
 Error implements the error interface.
 
+#### type Leaf
+
+```go
+type Leaf []byte
+```
+
+Leaf represents a childless Node that contains only data.
+
+The Lead itself is a byte-slice.
+
+#### func (Leaf) Child
+
+```go
+func (Leaf) Child(name string) (Node, error)
+```
+Child will always return nil with a ChildNotFoundError error for a Leaf Node.
+
+#### func (Leaf) Children
+
+```go
+func (Leaf) Children() iter.Seq2[string, Node]
+```
+Children will return an empty iterator for Leaf Nodes.
+
+#### func (Leaf) Data
+
+```go
+func (l Leaf) Data() []byte
+```
+Data returns the Nodes data.
+
+#### func (Leaf) DataLen
+
+```go
+func (l Leaf) DataLen() int64
+```
+DataLen returns the length of the data stored on this Node.
+
+#### func (Leaf) NumChildren
+
+```go
+func (Leaf) NumChildren() int
+```
+NumChildren will always return 0 for a Leaf Node.
+
+#### func (Leaf) WriteTo
+
+```go
+func (l Leaf) WriteTo(w io.Writer) (int64, error)
+```
+WriteTo will pass the Nodes data to the given io.Writer as a single byte-slice.
+
 #### type MemTree
 
 ```go
@@ -158,7 +273,7 @@ DataLen returns the length of the data stored on this Node.
 ```go
 func (m *MemTree) NumChildren() int
 ```
-NumChildren returns the number of child Node that are attached to this Node.
+NumChildren returns the number of child Nodes that are attached to this Node.
 
 #### func (*MemTree) WriteTo
 
@@ -188,6 +303,70 @@ type Node interface {
 ```
 
 Node represents a single node in a Tree.
+
+#### type Roots
+
+```go
+type Roots []multiNode
+```
+
+
+#### func  Merge
+
+```go
+func Merge(nodes ...Node) (Roots, error)
+```
+Merge combines the children from multiple nodes, merging same named children
+similarly.
+
+Changes made to the Nodes after merging will not be recognised.
+
+#### func (Roots) Child
+
+```go
+func (r Roots) Child(name string) (Node, error)
+```
+Child attempts to retrieve a child Node corresponding to the given name.
+
+If no child matches the given name, the returned error will be of type
+ChildNotFoundError.
+
+#### func (Roots) Children
+
+```go
+func (r Roots) Children() iter.Seq2[string, Node]
+```
+Children returns an iterator that loops through all of the child Nodes.
+
+Any errors will be expressed with a final Node of underlying type ChildrenError.
+
+#### func (Roots) Data
+
+```go
+func (Roots) Data() []byte
+```
+Data will always return nil for a Roots Node.
+
+#### func (Roots) DataLen
+
+```go
+func (Roots) DataLen() int64
+```
+DataLen will always return 0 for a Roots Node.
+
+#### func (Roots) NumChildren
+
+```go
+func (r Roots) NumChildren() int
+```
+NumChildren returns the number of child Nodes that are attached to this Node.
+
+#### func (Roots) WriteTo
+
+```go
+func (Roots) WriteTo(_ io.Writer) (int64, error)
+```
+WriteTo always return 0, nil for a Roots Node.
 
 #### type Tree
 
@@ -240,7 +419,7 @@ DataLen returns the length of the data stored on this Node.
 ```go
 func (t *Tree) NumChildren() (int, error)
 ```
-NumChildren returns the number of child Node that are attached to this Node.
+NumChildren returns the number of child Nodes that are attached to this Node.
 
 #### func (*Tree) Reader
 
