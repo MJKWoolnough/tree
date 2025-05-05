@@ -76,7 +76,7 @@ func (b *Branch) Add(name string, node Node) error {
 func (b Branch) Children() iter.Seq2[string, Node] {
 	return func(yield func(string, Node) bool) {
 		for _, nn := range b {
-			if !yield(nn.Name, nn) {
+			if !yield(nn.Name, nn.Node) {
 				break
 			}
 		}
