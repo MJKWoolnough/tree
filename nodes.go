@@ -133,7 +133,7 @@ type Roots []multiNode
 // Changes made to the Nodes after merging will not be recognised.
 func Merge(nodes ...Node) (Roots, error) {
 	var (
-		b map[string][]Node
+		b = make(map[string][]Node)
 		r Roots
 	)
 
