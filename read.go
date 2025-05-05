@@ -317,7 +317,7 @@ func (t *Tree) DataLen() (int64, error) {
 	return t.ptr - t.data, nil
 }
 
-// NumChildren returns the number of child Node that are attached to this Node.
+// NumChildren returns the number of child Nodes that are attached to this Node.
 func (t *Tree) NumChildren() (int, error) {
 	if t.r == nil {
 		return 0, nil

@@ -143,7 +143,7 @@ func (m *MemTree) DataLen() int64 {
 	return int64(len(m.data))
 }
 
-// NumChildren returns the number of child Node that are attached to this Node.
+// NumChildren returns the number of child Nodes that are attached to this Node.
 func (m *MemTree) NumChildren() int {
 	return len(m.names)
 }
