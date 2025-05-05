@@ -93,10 +93,7 @@ func (Branch) WriteTo(_ io.Writer) (int64, error) {
 // If no child matches the given name, the returned error will be of type
 // ChildNotFoundError.
 func (b Branch) Child(name string) (Node, error) {
-	pos, exists := slices.BinarySearchFunc(b, nameNode{Name: name}, func(a, b nameNode) int {
-		return strings.Compare(a.Name, b.Name)
-	})
-
+	pos, exists := slices.BinarySearchFunc(b, nameNode{Name: name}, nameNode.compare)
 	if !exists {
 		return nil, ChildNotFoundError(name)
 	}
