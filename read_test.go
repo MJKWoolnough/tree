@@ -134,12 +134,10 @@ var (
 		},
 		{ // 6
 			key:    []string{"A2", "B3"},
-			data:   []byte("JKL"),
 			errors: []error{nil, ChildNotFoundError("B3")},
 		},
 		{ // 7
 			key:    []string{"A2", "B2", "C1"},
-			data:   []byte("JKL"),
 			errors: []error{nil, nil, ChildNotFoundError("C1")},
 		},
 	}
