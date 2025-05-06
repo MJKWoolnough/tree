@@ -41,7 +41,7 @@ type Node interface {
 //	Sizes     []uint64 (size of NamesSizes and Data sections, stored as variable-length integers; zeros are omitted)
 //	Size      uint8  (lower 5 bits: size of the Sizes field, bit 6: size Data > 0, bit 7: size NameSizes > 0)
 //
-// NB: All slices are stored without seperators.
+// NB: All slices are stored without separators.
 func Serialise(w io.Writer, root Node) error {
 	sw := byteio.StickyLittleEndianWriter{Writer: w}
 
