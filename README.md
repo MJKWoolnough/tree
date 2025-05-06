@@ -22,7 +22,7 @@ The byte-format for each node is as follows:
     Sizes     []uint64 (size of NamesSizes and Data sections, stored as variable-length integers; zeros are omitted)
     Size      uint8  (lower 5 bits: size of the Sizes field, bit 6: size Data > 0, bit 7: size NameSizes > 0)
 
-NB: All slices are stored without seperators.
+NB: All slices are stored without separators.
 
 #### type Branch
 
@@ -392,7 +392,7 @@ specific Node pointer address within the data.
 ```go
 func (t *Tree) Child(name string) (*Tree, error)
 ```
-Child attempts to retrive a child Node corresponding to the given name.
+Child attempts to retrieve a child Node corresponding to the given name.
 
 If no child matches the given name, the returned error will be of type
 ChildNotFoundError.
