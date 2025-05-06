@@ -57,6 +57,10 @@ Loop:
 
 		if !bytes.Equal(data.Bytes(), test.data) {
 			t.Errorf("test %d: expecting data %q, got %q", n+1, test.data, data.Bytes())
+		} else if numChildren := node.NumChildren(); numChildren != test.numChildren {
+			t.Errorf("test %d: expecting %d children, got %d", n+1, test.numChildren, numChildren)
+		} else if dataLen := node.DataLen(); dataLen != test.dataLen {
+			t.Errorf("test %d: expecting %d bytes of data, got %d", n+1, test.dataLen, dataLen)
 		}
 	}
 }

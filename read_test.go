@@ -105,35 +105,44 @@ var (
 				},
 			},
 		},
-		data: []byte("MNO"),
+		data: []byte("MNOP"),
 	}
 	childTests = [...]struct {
-		key    []string
-		data   []byte
-		errors []error
+		key         []string
+		data        []byte
+		errors      []error
+		numChildren int
+		dataLen     int64
 	}{
 		{ // 1
-			data: []byte("MNO"),
+			data:        []byte("MNOP"),
+			numChildren: 2,
+			dataLen:     4,
 		},
 		{ // 2
-			key:    []string{"A1"},
-			data:   []byte("123"),
-			errors: []error{nil},
+			key:         []string{"A1"},
+			data:        []byte("123"),
+			errors:      []error{nil},
+			numChildren: 4,
+			dataLen:     3,
 		},
 		{ // 3
-			key:    []string{"A1", "B1"},
-			data:   []byte("456"),
-			errors: []error{nil, nil},
+			key:     []string{"A1", "B1"},
+			data:    []byte("456"),
+			errors:  []error{nil, nil},
+			dataLen: 3,
 		},
 		{ // 4
-			key:    []string{"A1", "B2"},
-			data:   []byte("789"),
-			errors: []error{nil, nil},
+			key:     []string{"A1", "B2"},
+			data:    []byte("789"),
+			errors:  []error{nil, nil},
+			dataLen: 3,
 		},
 		{ // 5
-			key:    []string{"A2", "B2"},
-			data:   []byte("JKL"),
-			errors: []error{nil, nil},
+			key:     []string{"A2", "B2"},
+			data:    []byte("JKL"),
+			errors:  []error{nil, nil},
+			dataLen: 3,
 		},
 		{ // 6
 			key:    []string{"A2", "B3"},
@@ -247,6 +256,14 @@ Loop:
 
 		if !bytes.Equal(data.Bytes(), test.data) {
 			t.Errorf("test %d: expecting data %q, got %q", n+1, test.data, data.Bytes())
+		} else if numChildren, err := node.NumChildren(); err != nil {
+			t.Errorf("test %d: unexpected error reading number of children: %s", n+1, err)
+		} else if numChildren != test.numChildren {
+			t.Errorf("test %d: expecting %d children, got %d", n+1, test.numChildren, numChildren)
+		} else if dataLen, err := node.DataLen(); err != nil {
+			t.Errorf("test %d: unexpected error reading length of data: %s", n+1, err)
+		} else if dataLen != test.dataLen {
+			t.Errorf("test %d: expecting %d bytes of data, got %d", n+1, test.dataLen, dataLen)
 		}
 	}
 }
