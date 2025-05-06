@@ -81,7 +81,7 @@ func (t *Tree) WriteTo(w io.Writer) (int64, error) {
 	return io.Copy(w, r)
 }
 
-// Child attempts to retrive a child Node corresponding to the given name.
+// Child attempts to retrieve a child Node corresponding to the given name.
 //
 // If no child matches the given name, the returned error will be of type
 // ChildNotFoundError.
