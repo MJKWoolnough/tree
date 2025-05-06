@@ -2,13 +2,11 @@
 package tree // import "vimagination.zapto.org/tree"
 
 import (
-	"bytes"
 	"io"
 	"iter"
 	"slices"
 	"sort"
 	"strings"
-	"unsafe"
 
 	"vimagination.zapto.org/byteio"
 )
@@ -112,7 +110,7 @@ func getAndWriteChildren(w *byteio.StickyLittleEndianWriter, node Node) (int64, 
 	for name, childNode := range node.Children() {
 		cn := child{name: name}
 		childPos, found := slices.BinarySearchFunc(c, cn, func(a, b child) int {
-			return bytes.Compare(unsafe.Slice(unsafe.StringData(a.name), len(a.name)), unsafe.Slice(unsafe.StringData(b.name), len(b.name)))
+			return strings.Compare(a.name, b.name)
 		})
 
 		if found {
