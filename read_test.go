@@ -85,6 +85,9 @@ var (
 						name: "B3",
 						data: []byte("ABC"),
 					},
+					{
+						name: "B4",
+					},
 				},
 			},
 			{
@@ -138,6 +141,10 @@ var (
 		},
 		{ // 7
 			key:    []string{"A2", "B2", "C1"},
+			errors: []error{nil, nil, ChildNotFoundError("C1")},
+		},
+		{ // 8
+			key:    []string{"A1", "B4", "C1"},
 			errors: []error{nil, nil, ChildNotFoundError("C1")},
 		},
 	}
