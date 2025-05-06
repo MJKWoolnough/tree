@@ -32,19 +32,21 @@ func (nd *node) Children() iter.Seq2[string, Node] {
 
 func TestSerialise(t *testing.T) {
 	for n, test := range [...]struct {
-		Input  node
+		Input  Node
 		Output []byte
 		Error  error
 	}{
-		{}, // 1
+		{
+			Input: &node{},
+		}, // 1
 		{ // 2
-			Input: node{
+			Input: &node{
 				data: []byte("ABC"),
 			},
 			Output: []byte{'A', 'B', 'C', 3, 0x20 | 1},
 		},
 		{ // 3
-			Input: node{
+			Input: &node{
 				children: []node{
 					{
 						name: "Child1",
@@ -55,7 +57,7 @@ func TestSerialise(t *testing.T) {
 			Output: []byte{'1', '2', '3', 3, 0x20 | 1, 'C', 'h', 'i', 'l', 'd', '1', 5, 0, 0, 0, 0, 0, 0, 0, 6, 1, 0x40 | 1},
 		},
 		{ // 4
-			Input: node{
+			Input: &node{
 				children: []node{
 					{
 						name: "Child1",
@@ -70,7 +72,7 @@ func TestSerialise(t *testing.T) {
 			Output: []byte{'1', '2', '3', 3, 0x20 | 1, 'q', 'w', 'e', 'r', 't', 'y', 6, 0x20 | 1, 'C', 'h', 'i', 'l', 'd', '1', 'c', 'h', 'i', 'l', 'd', '-', '2', 5, 0, 0, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 0, 0, 6, 7, 2, 0x40 | 1},
 		},
 		{ // 5
-			Input: node{
+			Input: &node{
 				children: []node{
 					{
 						name: "child-2",
@@ -86,7 +88,7 @@ func TestSerialise(t *testing.T) {
 			Output: []byte{'q', 'w', 'e', 'r', 't', 'y', 6, 0x20 | 1, '1', '2', '3', 3, 0x20 | 1, 'C', 'h', 'i', 'l', 'd', '1', 'c', 'h', 'i', 'l', 'd', '-', '2', 13, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 6, 7, 'a', 'b', 'c', 2, 3, 0x60 | 2},
 		},
 		{ // 6
-			Input: node{
+			Input: &node{
 				children: []node{
 					{
 						name: "Child1",
@@ -99,7 +101,7 @@ func TestSerialise(t *testing.T) {
 			Error: DuplicateChildError{"Child1"},
 		},
 		{ // 7
-			Input: node{
+			Input: &node{
 				children: []node{
 					{
 						name: "Child1",
@@ -119,13 +121,27 @@ func TestSerialise(t *testing.T) {
 			},
 			Error: DuplicateChildError{"Child1", "SubChild1"},
 		},
+		{ // 8
+			Input: errorWriter{},
+			Error: io.ErrShortWrite,
+		},
 	} {
 		var buf bytes.Buffer
 
-		if err := Serialise(&buf, &test.Input); !reflect.DeepEqual(err, test.Error) {
+		if err := Serialise(&buf, test.Input); !reflect.DeepEqual(err, test.Error) {
 			t.Errorf("test %d: expected error %v, got %v", n+1, test.Error, err)
 		} else if written := buf.Bytes(); !bytes.Equal(written, test.Output) {
 			t.Errorf("test %d: expecting to have written %v, wrote %v", n+1, test.Output, written)
 		}
 	}
+}
+
+type errorWriter struct{}
+
+func (errorWriter) Children() iter.Seq2[string, Node] {
+	return noChildren
+}
+
+func (errorWriter) WriteTo(_ io.Writer) (int64, error) {
+	return 0, io.ErrShortWrite
 }
