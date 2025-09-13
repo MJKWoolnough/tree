@@ -138,6 +138,8 @@ func (m *MemTree) Children() iter.Seq2[string, Node] {
 	}
 }
 
+// ChildNames returns an iterator that loops through the names of the child
+// Nodes.
 func (m *MemTree) ChildNames() iter.Seq[string] {
 	return slices.Values(m.names)
 }
