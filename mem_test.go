@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"reflect"
+	"slices"
 	"testing"
 )
 
@@ -61,6 +62,29 @@ Loop:
 			t.Errorf("test %d: expecting %d children, got %d", n+1, test.numChildren, numChildren)
 		} else if dataLen := node.DataLen(); dataLen != test.dataLen {
 			t.Errorf("test %d: expecting %d bytes of data, got %d", n+1, test.dataLen, dataLen)
+		}
+	}
+}
+
+func TestMemChildNames(t *testing.T) {
+	var buf bytes.Buffer
+
+	Serialise(&buf, testChild)
+
+	node, err := OpenMem(buf.Bytes())
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	childNames := slices.Collect(node.ChildNames())
+
+	if len(childNames) != 2 {
+		t.Fatalf("expecting 2 children, got %d", len(childNames))
+	}
+
+	for n, expected := range [...]string{"A1", "A2"} {
+		if expected != childNames[n] {
+			t.Errorf("test %d: expecting name %q, got %q", n+1, expected, childNames[n])
 		}
 	}
 }
