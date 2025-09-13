@@ -138,6 +138,10 @@ func (m *MemTree) Children() iter.Seq2[string, Node] {
 	}
 }
 
+func (m *MemTree) ChildNames() iter.Seq[string] {
+	return slices.Values(m.names)
+}
+
 // DataLen returns the length of the data stored on this Node.
 func (m *MemTree) DataLen() int64 {
 	return int64(len(m.data))
