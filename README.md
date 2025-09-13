@@ -244,6 +244,13 @@ Child attempts to retrieve a child Node corresponding to the given name.
 If no child matches the given name, the returned error will be of type
 ChildNotFoundError.
 
+#### func (*MemTree) ChildNames
+
+```go
+func (m *MemTree) ChildNames() iter.Seq[string]
+```
+ChildNames returns an iterator that loops through the names of the child Nodes.
+
 #### func (*MemTree) Children
 
 ```go
