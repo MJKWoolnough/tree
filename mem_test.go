@@ -15,7 +15,7 @@ func TestOpenMem(t *testing.T) {
 
 		node, err := OpenMem(buf.Bytes())
 		if err != nil {
-			t.Fatalf("test %d: expected error: %s", n+1, err)
+			t.Fatalf("test %d: unexpected error: %s", n+1, err)
 		}
 
 		tree := readTree(node)
@@ -35,7 +35,7 @@ Loop:
 	for n, test := range childTests {
 		node, err := OpenMem(buf.Bytes())
 		if err != nil {
-			t.Fatalf("test %d: expected error: %s", n+1, err)
+			t.Fatalf("test %d: unexpected error: %s", n+1, err)
 		}
 
 		for m := range test.key {
