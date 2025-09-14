@@ -155,15 +155,41 @@ func writeChildren(w *byteio.StickyLittleEndianWriter, c children) int64 {
 		w.WriteString(child.name)
 	}
 
-	for _, child := range c {
-		w.WriteInt64(child.pos)
+	ptrSizes := make([]uint8, len(c))
+
+	for n, child := range c {
+		start := w.Count
+
+		writePointer(w, uint64(child.pos))
+
+		ptrSizes[n] = uint8(w.Count - start - 1)
 	}
 
 	sizeStart := w.Count
 
-	for _, child := range c {
-		w.WriteUintX(uint64(len(child.name)))
+	for n, child := range c {
+		w.WriteUintX(uint64(len(child.name))<<3 | uint64(ptrSizes[n]))
 	}
 
 	return w.Count - sizeStart
+}
+
+func writePointer(w *byteio.StickyLittleEndianWriter, ptr uint64) {
+	if ptr < 0x100 {
+		w.WriteUint8(uint8(ptr))
+	} else if ptr < 0x10000 {
+		w.WriteUint16(uint16(ptr))
+	} else if ptr < 0x1000000 {
+		w.WriteUint24(uint32(ptr))
+	} else if ptr < 0x100000000 {
+		w.WriteUint32(uint32(ptr))
+	} else if ptr < 0x10000000000 {
+		w.WriteUint40(ptr)
+	} else if ptr < 0x1000000000000 {
+		w.WriteUint48(ptr)
+	} else if ptr < 0x100000000000000 {
+		w.WriteUint56(ptr)
+	} else {
+		w.WriteUint64(ptr)
+	}
 }

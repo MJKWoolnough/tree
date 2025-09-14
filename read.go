@@ -20,7 +20,7 @@ type Tree struct {
 	children, ptrs, data, ptr int64
 
 	mu       sync.Mutex
-	nameData [][2]int64
+	nameData []childNameSizes
 }
 
 // OpenAt opens a Tree from the given io.ReaderAt.
@@ -103,9 +103,10 @@ func (t *Tree) Child(name string) (*Tree, error) {
 		return nil, err
 	}
 
-	sr := byteio.LittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptrs+pos*8, 8)}
+	child := t.nameData[pos]
+	sr := byteio.LittleEndianReader{Reader: io.NewSectionReader(t.r, child.ptrStart, int64(child.ptrLength))}
 
-	childPtr, _, err := sr.ReadInt64()
+	childPtr, err := readChildPointer(&sr, child.ptrLength)
 	if err != nil {
 		return nil, err
 	}
@@ -181,27 +182,46 @@ func (t *Tree) initChildren() error {
 	}
 
 	t.nameData = nameData
-	t.ptrs = t.data - t.children - int64(len(nameData))*8
 	lastName := nameData[len(nameData)-1]
-	namesStart := t.ptrs - lastName[0] - lastName[1]
+	t.ptrs = t.data - t.children - lastName.ptrStart - int64(lastName.ptrLength)
+	namesStart := t.ptrs - lastName.nameStart - lastName.nameLength
 
 	for n := range nameData {
-		nameData[n][0] += namesStart
+		nameData[n].nameStart += namesStart
+		nameData[n].ptrStart += t.ptrs
 	}
 
 	return nil
 }
 
-func readChildNameSizes(r io.Reader, length int64) ([][2]int64, error) {
-	var nameData [][2]int64
-	var nextStart int64
+type childNameSizes struct {
+	nameStart  int64
+	nameLength int64
+	ptrStart   int64
+	ptrLength  uint8
+}
+
+func readChildNameSizes(r io.Reader, length int64) ([]childNameSizes, error) {
+	var (
+		nameData      []childNameSizes
+		nextNameStart int64
+		nextPtrStart  int64
+	)
 
 	sr := byteio.StickyLittleEndianReader{Reader: r}
 
 	for sr.Count < length {
-		l := int64(sr.ReadUintX())
-		nameData = append(nameData, [2]int64{nextStart, l})
-		nextStart += l
+		ls := sr.ReadUintX()
+		l := int64(ls >> 3)
+		p := uint8(ls&7) + 1
+		nameData = append(nameData, childNameSizes{
+			nameStart:  nextNameStart,
+			nameLength: l,
+			ptrStart:   nextPtrStart,
+			ptrLength:  p,
+		})
+		nextNameStart += l
+		nextPtrStart += int64(p)
 	}
 
 	return nameData, sr.Err
@@ -213,9 +233,9 @@ func (t *Tree) getChildIndex(name string) (int64, error) {
 	var err error
 
 	pos, found := sort.Find(len(t.nameData), func(i int) int {
-		tName := make([]byte, t.nameData[i][1])
+		tName := make([]byte, t.nameData[i].nameLength)
 
-		_, err = io.ReadFull(io.NewSectionReader(t.r, t.nameData[i][0], int64(len(tName))), tName)
+		_, err = io.ReadFull(io.NewSectionReader(t.r, t.nameData[i].nameStart, int64(len(tName))), tName)
 		if err != nil {
 			return 0
 		}
@@ -259,19 +279,19 @@ func (t *Tree) Children() iter.Seq2[string, Node] {
 func (t *Tree) iterChildren(yield func(string, Node) bool) {
 	var sb strings.Builder
 
-	namesStart := t.nameData[0][0]
+	namesStart := t.nameData[0].nameStart
 	nameReader := io.NewSectionReader(t.r, namesStart, t.ptrs-namesStart)
 	ptrReader := byteio.LittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptrs, t.data-t.ptrs)}
 
 	for _, child := range t.nameData {
-		_, err := io.CopyN(&sb, nameReader, child[1])
+		_, err := io.CopyN(&sb, nameReader, child.nameLength)
 		if err != nil {
 			yield("", ChildrenError{err})
 
 			return
 		}
 
-		ptr, _, err := ptrReader.ReadInt64()
+		ptr, err := readChildPointer(&ptrReader, child.ptrLength)
 		if err != nil {
 			yield(sb.String(), ChildrenError{err})
 
@@ -283,6 +303,43 @@ func (t *Tree) iterChildren(yield func(string, Node) bool) {
 		}
 
 		sb.Reset()
+	}
+}
+
+func readChildPointer(r *byteio.LittleEndianReader, size uint8) (int64, error) {
+	switch size {
+	case 1:
+		n, _, err := r.ReadUint8()
+
+		return int64(n), err
+	case 2:
+		n, _, err := r.ReadUint16()
+
+		return int64(n), err
+	case 3:
+		n, _, err := r.ReadUint24()
+
+		return int64(n), err
+	case 4:
+		n, _, err := r.ReadUint32()
+
+		return int64(n), err
+	case 5:
+		n, _, err := r.ReadUint40()
+
+		return int64(n), err
+	case 6:
+		n, _, err := r.ReadUint48()
+
+		return int64(n), err
+	case 7:
+		n, _, err := r.ReadUint56()
+
+		return int64(n), err
+	default:
+		n, _, err := r.ReadUint64()
+
+		return int64(n), err
 	}
 }
 

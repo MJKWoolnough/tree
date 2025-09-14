@@ -57,16 +57,20 @@ func (m *MemTree) loadChildren(data []byte, start, length int64) error {
 		return err
 	}
 
-	ptrs := start - int64(len(nameData))*8
+	if len(nameData) == 0 {
+		return nil
+	}
+
 	lastName := nameData[len(nameData)-1]
-	namesStart := ptrs - lastName[0] - lastName[1]
+	ptrs := start - lastName.ptrStart - int64(lastName.ptrLength)
+	namesStart := ptrs - lastName.nameStart - lastName.nameLength
 	m.names = make([]string, len(nameData))
 	m.ptrs = make([][]byte, len(nameData))
 
 	for n, name := range nameData {
-		m.names[n] = unsafe.String(&data[namesStart+name[0]], name[1])
-		m.ptrs[n] = data[ptrs : ptrs+8]
-		ptrs += 8
+		m.names[n] = unsafe.String(&data[namesStart+name.nameStart], name.nameLength)
+		m.ptrs[n] = data[ptrs : ptrs+int64(name.ptrLength)]
+		ptrs += int64(name.ptrLength)
 	}
 
 	return nil
@@ -105,9 +109,8 @@ func (m *MemTree) Child(name string) (*MemTree, error) {
 
 func readPointer(ptr []byte) (int64, error) {
 	ler := byteio.LittleEndianReader{Reader: bytes.NewReader(ptr)}
-	p, _, err := ler.ReadInt64()
 
-	return p, err
+	return readChildPointer(&ler, uint8(len(ptr)))
 }
 
 // Children returns an iterator that loops through all of the child Nodes.
