@@ -2,9 +2,12 @@ package tree
 
 import (
 	"bytes"
+	"encoding/base64"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"testing"
 )
@@ -265,5 +268,60 @@ Loop:
 		} else if dataLen != test.dataLen {
 			t.Errorf("test %d: expecting %d bytes of data, got %d", n+1, test.dataLen, dataLen)
 		}
+	}
+}
+
+func genLargeTree(level int) node {
+	var n node
+
+	n.data = make([]byte, rand.Intn(1024))
+
+	for p := range n.data {
+		n.data[p] = byte(rand.Intn(256))
+	}
+
+	if len(n.data) == 0 {
+		n.data = nil
+	}
+
+	if level > 0 {
+		names := make([]string, level)
+		n.children = make([]node, 0, level)
+
+		for p := range names {
+			var name bytes.Buffer
+
+			for range rand.Intn(1024) {
+				name.WriteByte(byte(rand.Intn(256)))
+			}
+
+			names[p] = base64.StdEncoding.EncodeToString(name.Bytes())
+		}
+
+		slices.Sort(names)
+
+		names = slices.Compact(names)
+
+		for p := range names {
+			child := genLargeTree(level - 1)
+			child.name = names[p]
+			n.children = append(n.children, child)
+		}
+	}
+
+	return n
+}
+
+func TestLargeTreeRead(t *testing.T) {
+	tree := genLargeTree(5)
+
+	var buf bytes.Buffer
+
+	Serialise(&buf, &tree)
+
+	read := readTree(OpenAt(bytes.NewReader(buf.Bytes()), int64(buf.Len())))
+
+	if !reflect.DeepEqual(&tree, &read) {
+		t.Errorf("did not read what we wrote")
 	}
 }
