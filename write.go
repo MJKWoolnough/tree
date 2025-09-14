@@ -33,8 +33,8 @@ type Node interface {
 // The byte-format for each node is as follows:
 //
 //	Names     []string (stored in lexical order)
-//	Pointers  []int64  (pointer to the end (&Size + 1) of each child node record)
-//	NameSizes []uint64 (lengths of each name, stored as variable-length integers)
+//	Pointers  []int64  (pointer to the end (&Size + 1) of each child node record, stored as variable-length integers; length of pointer stored in NameSizes)
+//	NameSizes []uint64 (lengths of each name and pointer, stored as variable-length integers; bottom three bits are the length of the pointer - 1, remaining bits are name length)
 //	Data      []byte
 //	Sizes     []uint64 (size of NamesSizes and Data sections, stored as variable-length integers; zeros are omitted)
 //	Size      uint8  (lower 5 bits: size of the Sizes field, bit 6: size Data > 0, bit 7: size NameSizes > 0)
