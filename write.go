@@ -32,7 +32,7 @@ type Node interface {
 //
 // The byte-format for each node is as follows:
 //
-//	Names     []string (stored, in lexical order)
+//	Names     []string (stored in lexical order)
 //	Pointers  []int64  (pointer to the end (&Size + 1) of each child node record)
 //	NameSizes []uint64 (lengths of each name, stored as variable-length integers)
 //	Data      []byte
