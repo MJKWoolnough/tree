@@ -43,6 +43,15 @@ type Node interface {
 func Serialise(w io.Writer, root Node) error {
 	sw := byteio.StickyLittleEndianWriter{Writer: w}
 
+	if s, ok := w.(io.Seeker); ok {
+		pos, err := s.Seek(0, io.SeekCurrent)
+		if err != nil {
+			return err
+		}
+
+		sw.Count = pos
+	}
+
 	writeNode(&sw, root)
 
 	return sw.Err
