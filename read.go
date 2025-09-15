@@ -23,6 +23,15 @@ type Tree struct {
 	nameData []childNameSizes
 }
 
+type OffsetReaderAt struct {
+	io.ReaderAt
+	Offset int64
+}
+
+func (o *OffsetReaderAt) ReadAt(p []byte, offset int64) (int, error) {
+	return o.ReaderAt.ReadAt(p, offset-o.Offset)
+}
+
 // OpenAt opens a Tree from the given io.ReaderAt.
 //
 // The pos should be the length of the data underlying the io.ReaderAt, or a
