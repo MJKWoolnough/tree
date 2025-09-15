@@ -23,11 +23,15 @@ type Tree struct {
 	nameData []childNameSizes
 }
 
+// OffsetReaderAt is a wrapper around the io.ReaderAt interface that will shift
+// the read position by the set Offset.
 type OffsetReaderAt struct {
 	io.ReaderAt
 	Offset int64
 }
 
+// ReadAt implements the io.ReaderAt interface, but shifts the offset by adding
+// OffsetReaderAt.Offset.
 func (o *OffsetReaderAt) ReadAt(p []byte, offset int64) (int, error) {
 	return o.ReaderAt.ReadAt(p, offset-o.Offset)
 }
