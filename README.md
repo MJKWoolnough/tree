@@ -24,6 +24,12 @@ The byte-format for each node is as follows:
 
 NB: All slices are stored without separators.
 
+If the given Writer implements the io.Seeker interface it will be used to
+determine the current writer position, and offset all pointer accordingly.
+
+The OffsetWriter type can be used to wrap an io.Writer to provide a custom
+offset, or to have Serialise ignore the underlying Writers position.
+
 #### type Branch
 
 ```go
@@ -310,6 +316,46 @@ type Node interface {
 ```
 
 Node represents a single node in a Tree.
+
+#### type OffsetReaderAt
+
+```go
+type OffsetReaderAt struct {
+	io.ReaderAt
+	Offset int64
+}
+```
+
+OffsetReaderAt is a wrapper around the io.ReaderAt interface that will shift the
+read position by the set Offset.
+
+#### func (*OffsetReaderAt) ReadAt
+
+```go
+func (o *OffsetReaderAt) ReadAt(p []byte, offset int64) (int, error)
+```
+ReadAt implements the io.ReaderAt interface, but shifts the offset by adding
+OffsetReaderAt.Offset.
+
+#### type OffsetWriter
+
+```go
+type OffsetWriter struct {
+	io.Writer
+	Offset int64
+}
+```
+
+OffsetWriter is a wrapper around io.Writer that provides an io.Seeker interface
+that can be used by Serialise to offset the pointers in the tree.
+
+#### func (OffsetWriter) Seek
+
+```go
+func (o OffsetWriter) Seek(_ int64, _ int) (int64, error)
+```
+Seek implements the io.Seeker interface, but always returns OffsetWriter.Offset,
+nil.
 
 #### type Roots
 
