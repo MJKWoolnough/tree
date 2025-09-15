@@ -28,6 +28,15 @@ type Node interface {
 	io.WriterTo
 }
 
+type OffsetWriter struct {
+	io.Writer
+	Offset int64
+}
+
+func (o OffsetWriter) Seek(_ int64, _ int) (int64, error) {
+	return o.Offset, nil
+}
+
 // Serialise writes a tree structure to the given writer.
 //
 // The byte-format for each node is as follows:
