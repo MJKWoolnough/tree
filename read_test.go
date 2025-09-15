@@ -315,13 +315,15 @@ func genLargeTree(level int) node {
 func TestLargeTreeRead(t *testing.T) {
 	tree := genLargeTree(5)
 
-	var buf bytes.Buffer
+	for n, offset := range [...]int64{0, 0x100, 0x10000, 0x1000000, 0x100000000, 0x10000000000, 0x1000000000000, 0x100000000000000} {
+		var buf bytes.Buffer
 
-	Serialise(&buf, &tree)
+		Serialise(&OffsetWriter{Writer: &buf, Offset: offset}, &tree)
 
-	read := readTree(OpenAt(bytes.NewReader(buf.Bytes()), int64(buf.Len())))
+		read := readTree(OpenAt(&OffsetReaderAt{ReaderAt: bytes.NewReader(buf.Bytes()), Offset: offset}, offset+int64(buf.Len())))
 
-	if !reflect.DeepEqual(&tree, &read) {
-		t.Errorf("did not read what we wrote")
+		if !reflect.DeepEqual(&tree, &read) {
+			t.Errorf("test %d: did not read what we wrote", n+1)
+		}
 	}
 }
