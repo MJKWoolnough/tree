@@ -69,36 +69,14 @@ func main() {
 
 # Binary Format
 
-┌───────────────────────────────────────────────────────────┐
-│ Node Data                                                 │
-├───────────────────────────────────────────────────────────┤
-│ Names Section                                             │
-│  ├─ Name0: Name of Child0 node (bytes)                    │
-│  ├─ Name1: Name of Child1 node (bytes)                    │
-│  └─ …                                                     │
-├───────────────────────────────────────────────────────────┤
-│ Pointers Section                                          │
-│  ├─ Pointer0: int64 offset to end of Child0 node (varint) │
-│  ├─ Pointer1: int64 offset to end of Child1 node (varint) │
-│  └─ …                                                     │
-├───────────────────────────────────────────────────────────┤
-│ NameSizes Section                                         │
-│  ├─ Size of Name0 << 3 & Size of Ptr0 (varint)            │
-│  ├─ Size of Name1 << 3 & Size of Ptr1 (varint)            │
-│  └─ …                                                     │
-├───────────────────────────────────────────────────────────┤
-│ Data Section                                              │
-│  └─ Bytes of the data stored on this node                 │
-├───────────────────────────────────────────────────────────┤
-│ Sizes Section                                             │
-│  ├─ Size of NameSizes section (varint); only if > 0       │
-│  └─ Size of Data section (varint); only if > 0            │
-├───────────────────────────────────────────────────────────┤
-│ Size Flags (uint8)                                        │
-│  ├─ Bits 0-5: Size of the Sizes section in bytes          │
-│  ├─ Bit 6: 1 when there size of data > 0; 0 otherwise     │
-│  └─ Bit 7: 1 when there are children; 0 otherwise         │
-└───────────────────────────────────────────────────────────┘
+| Node Data                                                                                                                                                                               |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Names Section<br>  ├─ Name0: Name of Child0 node (bytes)<br>  ├─ Name1: Name of Child1 node (bytes)<br>  └─ …                                                                           |
+| Pointers Section<br>  ├─ Pointer0: int64 offset to end of Child0 node (varint)<br>  ├─ Pointer1: int64 offset to end of Child1 node (varint)<br>  └─ …                                      |
+| NameSizes Section<br>  ├─ Size of Name0 << 3 & Size of Ptr0 (varint)<br>  ├─ Size of Name1 << 3 & Size of Ptr1 (varint)<br>  └─ …                                                       |
+| Data Section<br>  └─ Bytes of the data stored on this node                                                                                                                              |
+| Sizes Section<br>  ├─ Size of NameSizes section (varint); only if > 0<br>  └─ Size of Data section (varint); only if > 0                                                                |
+| Size Flags (uint8)<br>  ├─ Bits 0-5: Size of the Sizes section in bytes<br>  ├─ Bit 6: 1 when there size of data > 0; 0 otherwise<br>  └─ Bit 7: 1 when there are children; 0 otherwise |
 
 NB: Pointers to leaf nodes with no data will be 0.
 
