@@ -88,3 +88,19 @@ func TestMemChildNames(t *testing.T) {
 		}
 	}
 }
+
+func TestLargeTreeMem(t *testing.T) {
+	tree := genLargeTree(5)
+	tree.name = ""
+
+	var buf bytes.Buffer
+
+	Serialise(&buf, &tree)
+
+	mem, _ := OpenMem(buf.Bytes())
+	read := readTree(mem)
+
+	if !reflect.DeepEqual(&tree, &read) {
+		t.Errorf("did not read what we wrote")
+	}
+}
