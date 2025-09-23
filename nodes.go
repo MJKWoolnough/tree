@@ -9,7 +9,7 @@ import (
 
 // Leaf represents a childless Node that contains only data.
 //
-// The Lead itself is a byte-slice.
+// The Leaf itself is a byte-slice.
 type Leaf []byte
 
 // Children will return an empty iterator for Leaf Nodes.
