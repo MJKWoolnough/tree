@@ -69,6 +69,8 @@ func main() {
 
 # Binary Format
 
+The following is the data format for a single node in the tree; nodes will normally be written depth first and multibyte numbers will be written in little endian format.
+
 | Node Data                                                                                                                                                                               |
 |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Names Section<br>  ├─ Name0: Name of Child0 node (bytes)<br>  ├─ Name1: Name of Child1 node (bytes)<br>  └─ …                                                                           |
