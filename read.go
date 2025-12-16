@@ -117,11 +117,11 @@ func (t *Tree) Child(name string) (*Tree, error) {
 	}
 
 	child := t.nameData[pos]
-	sr := byteio.LittleEndianReader{Reader: io.NewSectionReader(t.r, child.ptrStart, int64(child.ptrLength))}
+	sr := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(t.r, child.ptrStart, int64(child.ptrLength))}
 
-	childPtr, err := readChildPointer(&sr, child.ptrLength)
-	if err != nil {
-		return nil, err
+	childPtr := readChildPointer(&sr, child.ptrLength)
+	if sr.Err != nil {
+		return nil, sr.Err
 	}
 
 	return OpenAt(t.r, childPtr), nil
@@ -294,7 +294,7 @@ func (t *Tree) iterChildren(yield func(string, Node) bool) {
 
 	namesStart := t.nameData[0].nameStart
 	nameReader := io.NewSectionReader(t.r, namesStart, t.ptrs-namesStart)
-	ptrReader := byteio.LittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptrs, t.data-t.ptrs)}
+	ptrReader := byteio.StickyLittleEndianReader{Reader: io.NewSectionReader(t.r, t.ptrs, t.data-t.ptrs)}
 
 	for _, child := range t.nameData {
 		_, err := io.CopyN(&sb, nameReader, child.nameLength)
@@ -304,8 +304,8 @@ func (t *Tree) iterChildren(yield func(string, Node) bool) {
 			return
 		}
 
-		ptr, err := readChildPointer(&ptrReader, child.ptrLength)
-		if err != nil {
+		ptr := readChildPointer(&ptrReader, child.ptrLength)
+		if ptrReader.Err != nil {
 			yield(sb.String(), ChildrenError{err})
 
 			return
@@ -319,40 +319,51 @@ func (t *Tree) iterChildren(yield func(string, Node) bool) {
 	}
 }
 
-func readChildPointer(r *byteio.LittleEndianReader, size uint8) (int64, error) {
+type endianReader interface {
+	ReadUint8() uint8
+	ReadUint16() uint16
+	ReadUint24() uint32
+	ReadUint32() uint32
+	ReadUint40() uint64
+	ReadUint48() uint64
+	ReadUint56() uint64
+	ReadUint64() uint64
+}
+
+func readChildPointer[T endianReader](r T, size uint8) int64 {
 	switch size {
 	case 1:
-		n, _, err := r.ReadUint8()
+		n := r.ReadUint8()
 
-		return int64(n), err
+		return int64(n)
 	case 2:
-		n, _, err := r.ReadUint16()
+		n := r.ReadUint16()
 
-		return int64(n), err
+		return int64(n)
 	case 3:
-		n, _, err := r.ReadUint24()
+		n := r.ReadUint24()
 
-		return int64(n), err
+		return int64(n)
 	case 4:
-		n, _, err := r.ReadUint32()
+		n := r.ReadUint32()
 
-		return int64(n), err
+		return int64(n)
 	case 5:
-		n, _, err := r.ReadUint40()
+		n := r.ReadUint40()
 
-		return int64(n), err
+		return int64(n)
 	case 6:
-		n, _, err := r.ReadUint48()
+		n := r.ReadUint48()
 
-		return int64(n), err
+		return int64(n)
 	case 7:
-		n, _, err := r.ReadUint56()
+		n := r.ReadUint56()
 
-		return int64(n), err
+		return int64(n)
 	default:
-		n, _, err := r.ReadUint64()
+		n := r.ReadUint64()
 
-		return int64(n), err
+		return int64(n)
 	}
 }
 

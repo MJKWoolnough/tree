@@ -108,9 +108,9 @@ func (m *MemTree) Child(name string) (*MemTree, error) {
 }
 
 func readPointer(ptr []byte) (int64, error) {
-	ler := byteio.LittleEndianReader{Reader: bytes.NewReader(ptr)}
+	ler := byteio.StickyLittleEndianReader{Reader: bytes.NewReader(ptr)}
 
-	return readChildPointer(&ler, uint8(len(ptr)))
+	return readChildPointer(&ler, uint8(len(ptr))), ler.Err
 }
 
 // Children returns an iterator that loops through all of the child Nodes.
