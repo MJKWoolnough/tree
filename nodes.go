@@ -98,7 +98,7 @@ func (b Branch) Child(name string) (Node, error) {
 		return nil, ChildNotFoundError(name)
 	}
 
-	return b[pos], nil
+	return b[pos].Node, nil
 }
 
 // Data returns the Nodes data.
