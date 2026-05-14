@@ -182,7 +182,9 @@ func (r Roots) Children() iter.Seq2[string, Node] {
 				return
 			}
 
-			yield(children.name, roots)
+			if !yield(children.name, roots) {
+				return
+			}
 		}
 	}
 }
