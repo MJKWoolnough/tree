@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/MJKWoolnough/tree/actions/workflows/go-checks.yml/badge.svg)](https://github.com/MJKWoolnough/tree/actions)
 [![Go Reference](https://pkg.go.dev/badge/vimagination.zapto.org/tree.svg)](https://pkg.go.dev/vimagination.zapto.org/tree)
-[![Go Report Card](https://goreportcard.com/badge/vimagination.zapto.org/tree)](https://goreportcard.com/report/vimagination.zapto.org/tree)
 
 --
     import "vimagination.zapto.org/tree"
