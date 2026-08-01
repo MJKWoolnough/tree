@@ -154,3 +154,16 @@ func (m *MemTree) DataLen() int64 {
 func (m *MemTree) NumChildren() int {
 	return len(m.names)
 }
+
+func (m *MemTree) Navigate(names iter.Seq[string]) (*MemTree, error) {
+	var err error
+
+	for name := range names {
+		m, err = m.Child(name)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return m, nil
+}
