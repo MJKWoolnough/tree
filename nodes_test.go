@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -62,5 +63,13 @@ func TestRoots(t *testing.T) {
 
 	if read := readTree(tree); !reflect.DeepEqual(read, expected) {
 		t.Errorf("no match")
+	}
+
+	if _, err := branches[2].Child("BranchA"); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	if _, err := branches[2].Child("BranchZ"); !errors.Is(err, ChildNotFoundError("BranchZ")) {
+		t.Errorf("expected ChildNotFoundError(BranchZ), got %v", err)
 	}
 }
