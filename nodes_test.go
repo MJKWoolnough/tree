@@ -72,4 +72,12 @@ func TestRoots(t *testing.T) {
 	if _, err := branches[2].Child("BranchZ"); !errors.Is(err, ChildNotFoundError("BranchZ")) {
 		t.Errorf("expected ChildNotFoundError(BranchZ), got %v", err)
 	}
+
+	if _, err := tree.Child("Parent"); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	if _, err := tree.Child("BranchZ"); !errors.Is(err, ChildNotFoundError("BranchZ")) {
+		t.Errorf("expected ChildNotFoundError(BranchZ), got %v", err)
+	}
 }
