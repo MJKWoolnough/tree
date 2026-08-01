@@ -231,7 +231,7 @@ func readTree(t Node) node {
 	return n
 }
 
-func TestChild(t *testing.T) {
+func TestTreeChild(t *testing.T) {
 	var buf bytes.Buffer
 
 	Serialise(&buf, testChild)

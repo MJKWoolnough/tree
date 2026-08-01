@@ -1,7 +1,9 @@
 package tree
 
 import (
+	"bytes"
 	"errors"
+	"os"
 	"reflect"
 	"testing"
 )
@@ -79,5 +81,32 @@ func TestRoots(t *testing.T) {
 
 	if _, err := tree.Child("BranchZ"); !errors.Is(err, ChildNotFoundError("BranchZ")) {
 		t.Errorf("expected ChildNotFoundError(BranchZ), got %v", err)
+	}
+}
+
+func TestChild(t *testing.T) {
+	var buf bytes.Buffer
+
+	branch := Branch{nameNode{Name: "Child", Node: Leaf{}}}
+
+	Serialise(&buf, Branch{nameNode{Name: "Child", Node: Leaf{}}})
+
+	f, _ := os.CreateTemp(t.TempDir(), "")
+
+	f.Write(buf.Bytes())
+	f.Close()
+
+	m, _ := OpenMem(buf.Bytes())
+	tree, _ := OpenFile(f.Name())
+	root, _ := Merge(branch, m)
+
+	for n, test := range [...]Node{m, tree, branch, root} {
+		if _, err := Child(test, "Child"); err != nil {
+			t.Errorf("test %d: unexpected error: %v", n+1, err)
+		}
+
+		if _, err := Child(test, "NoChild"); !errors.Is(err, ChildNotFoundError("NoChild")) {
+			t.Errorf("test %d: expected ChildNotFoundError(NoChild), got %v", n+1, err)
+		}
 	}
 }
