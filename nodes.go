@@ -225,3 +225,26 @@ func (Roots) DataLen() int64 {
 func (r Roots) NumChildren() int {
 	return len(r)
 }
+
+func Child(node Node, name string) (Node, error) {
+	switch node := node.(type) {
+	case *MemTree:
+		return node.Child(name)
+	case *Tree:
+		return node.Child(name)
+	case Branch:
+		return node.Child(name)
+	case Leaf:
+		return node.Child(name)
+	case Roots:
+		return node.Child(name)
+	}
+
+	for n, child := range node.Children() {
+		if n == name {
+			return child, nil
+		}
+	}
+
+	return nil, ChildNotFoundError(name)
+}
