@@ -226,6 +226,7 @@ func (r Roots) NumChildren() int {
 	return len(r)
 }
 
+// Child returns a child Node matching the given name.
 func Child(node Node, name string) (Node, error) {
 	switch node := node.(type) {
 	case *MemTree:
