@@ -104,3 +104,26 @@ func TestLargeTreeMem(t *testing.T) {
 		t.Errorf("did not read what we wrote")
 	}
 }
+
+func TestNavigateMem(t *testing.T) {
+	var buf bytes.Buffer
+
+	Serialise(&buf, testChild)
+
+	node, err := OpenMem(buf.Bytes())
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	res, err := node.Navigate(slices.Values([]string{"A1", "B3"}))
+	if err != nil {
+		t.Errorf("test 1: expecting nil error, got %v", err)
+	} else if data := string(res.Data()); data != "ABC" {
+		t.Errorf("test 1: expecting data %q, got %q", "ABC", data)
+	}
+
+	res, err = node.Navigate(slices.Values([]string{"Z1", "B3"}))
+	if !errors.Is(err, ChildNotFoundError("Z1")) {
+		t.Errorf("test 1: expecting ChildNotFound(Z1) error, got %v", err)
+	}
+}
