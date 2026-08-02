@@ -124,6 +124,10 @@ func (b Branch) NumChildren() int {
 	return len(b)
 }
 
+func (b Branch) Navigate(names iter.Seq[string]) (Node, error) {
+	return Navigate(b, names)
+}
+
 type multiNode struct {
 	name  string
 	nodes []Node
@@ -232,6 +236,10 @@ func (Roots) DataLen() int64 {
 // NumChildren returns the number of child Nodes that are attached to this Node.
 func (r Roots) NumChildren() int {
 	return len(r)
+}
+
+func (r Roots) Navigate(names iter.Seq[string]) (Node, error) {
+	return Navigate(r, names)
 }
 
 // Child returns a child Node matching the given name.
