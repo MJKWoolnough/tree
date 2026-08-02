@@ -411,6 +411,10 @@ func (t *Tree) NumChildren() (int, error) {
 	return len(t.nameData), nil
 }
 
+// Navigate walks down the tree using the names provided by the iterator.
+//
+// Will return the first error encountered, or the final Node if the iterator
+// ends.
 func (t *Tree) Navigate(names iter.Seq[string]) (*Tree, error) {
 	var err error
 
