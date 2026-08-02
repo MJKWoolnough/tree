@@ -257,3 +257,25 @@ func Child(node Node, name string) (Node, error) {
 
 	return nil, ChildNotFoundError(name)
 }
+
+func Navigate(node Node, names iter.Seq[string]) (Node, error) {
+	switch node := node.(type) {
+	case *MemTree:
+		return node.Navigate(names)
+	case *Tree:
+		return node.Navigate(names)
+	case Leaf:
+		return node.Navigate(names)
+	}
+
+	var err error
+
+	for name := range names {
+		node, err = Child(node, name)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return node, nil
+}
