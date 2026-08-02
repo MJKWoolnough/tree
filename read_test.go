@@ -3,6 +3,7 @@ package tree
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -325,5 +326,27 @@ func TestLargeTreeRead(t *testing.T) {
 		if !reflect.DeepEqual(&tree, &read) {
 			t.Errorf("test %d: did not read what we wrote", n+1)
 		}
+	}
+}
+
+func TestNavigate(t *testing.T) {
+	var buf, data bytes.Buffer
+
+	Serialise(&buf, testChild)
+
+	node := OpenAt(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+
+	res, err := node.Navigate(slices.Values([]string{"A1", "B3"}))
+	if err != nil {
+		t.Errorf("test 1: expecting nil error, got %v", err)
+	} else if _, err = res.WriteTo(&data); err != nil {
+		t.Errorf("test 1: expecting nil error, got %v", err)
+	} else if data.String() != "ABC" {
+		t.Errorf("test 1: expecting data %q, got %q", "ABC", data.String())
+	}
+
+	res, err = node.Navigate(slices.Values([]string{"Z1", "B3"}))
+	if !errors.Is(err, ChildNotFoundError("Z1")) {
+		t.Errorf("test 1: expecting ChildNotFound(Z1) error, got %v", err)
 	}
 }
