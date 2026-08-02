@@ -329,7 +329,7 @@ func TestLargeTreeRead(t *testing.T) {
 	}
 }
 
-func TestNavigate(t *testing.T) {
+func TestNavigateTree(t *testing.T) {
 	var buf, data bytes.Buffer
 
 	Serialise(&buf, testChild)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -89,7 +90,7 @@ func TestChild(t *testing.T) {
 
 	branch := Branch{nameNode{Name: "Child", Node: Leaf{}}}
 
-	Serialise(&buf, Branch{nameNode{Name: "Child", Node: Leaf{}}})
+	Serialise(&buf, branch)
 
 	f, _ := os.CreateTemp(t.TempDir(), "")
 
@@ -107,6 +108,39 @@ func TestChild(t *testing.T) {
 
 		if _, err := Child(test, "NoChild"); !errors.Is(err, ChildNotFoundError("NoChild")) {
 			t.Errorf("test %d: expected ChildNotFoundError(NoChild), got %v", n+1, err)
+		}
+	}
+}
+
+func TestNavigate(t *testing.T) {
+	var buf bytes.Buffer
+
+	branch := Branch{nameNode{Name: "A", Node: Branch{nameNode{Name: "B", Node: Leaf("data")}}}}
+
+	Serialise(&buf, branch)
+
+	f, _ := os.CreateTemp(t.TempDir(), "")
+
+	f.Write(buf.Bytes())
+	f.Close()
+
+	m, _ := OpenMem(buf.Bytes())
+	tree, _ := OpenFile(f.Name())
+	root, _ := Merge(branch, Leaf(""))
+
+	for n, test := range [...]Node{m, tree, branch, root} {
+		var data strings.Builder
+
+		if node, err := Navigate(test, strings.SplitSeq("A/B", "/")); err != nil {
+			t.Errorf("test %d: unexpected error: %v", n+1, err)
+		} else if _, err = node.WriteTo(&data); err != nil {
+			t.Errorf("test %d: unexpected error: %v", n+1, err)
+		} else if data.String() != "data" {
+			t.Errorf("test %d: expected to read %q, got %q", n+1, "data", data.String())
+		}
+
+		if _, err := Navigate(test, strings.SplitSeq("B/C", "/")); !errors.Is(err, ChildNotFoundError("B")) {
+			t.Errorf("test %d: expected ChildNotFoundError(B), got %v", n+1, err)
 		}
 	}
 }
