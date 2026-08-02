@@ -124,6 +124,10 @@ func (b Branch) NumChildren() int {
 	return len(b)
 }
 
+// Navigate walks down the Branches using the names provided by the iterator.
+//
+// Will return the first error encountered, or the final Node if the iterator
+// ends.
 func (b Branch) Navigate(names iter.Seq[string]) (Node, error) {
 	return Navigate(b, names)
 }
@@ -238,6 +242,10 @@ func (r Roots) NumChildren() int {
 	return len(r)
 }
 
+// Navigate walks down the Roots using the names provided by the iterator.
+//
+// Will return the first error encountered, or the final Node if the iterator
+// ends.
 func (r Roots) Navigate(names iter.Seq[string]) (Node, error) {
 	return Navigate(r, names)
 }
@@ -266,6 +274,10 @@ func Child(node Node, name string) (Node, error) {
 	return nil, ChildNotFoundError(name)
 }
 
+// Navigate walks down the Node using the names provided by the iterator.
+//
+// Will return the first error encountered, or the final Node if the iterator
+// ends.
 func Navigate(node Node, names iter.Seq[string]) (Node, error) {
 	switch node := node.(type) {
 	case *MemTree:
