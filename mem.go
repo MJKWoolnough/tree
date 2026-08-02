@@ -155,6 +155,10 @@ func (m *MemTree) NumChildren() int {
 	return len(m.names)
 }
 
+// Navigate walks down the tree using the names provided by the iterator.
+//
+// Will return the first error encountered, or the final Node if the iterator
+// ends.
 func (m *MemTree) Navigate(names iter.Seq[string]) (*MemTree, error) {
 	var err error
 
