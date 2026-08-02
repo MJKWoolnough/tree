@@ -411,6 +411,19 @@ func (t *Tree) NumChildren() (int, error) {
 	return len(t.nameData), nil
 }
 
+func (t *Tree) Navigate(names iter.Seq[string]) (*Tree, error) {
+	var err error
+
+	for name := range names {
+		t, err = t.Child(name)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return t, nil
+}
+
 // ChildrenError is a Node and error type that is returned from the Children
 // iterator.
 //
