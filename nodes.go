@@ -45,6 +45,14 @@ func (Leaf) NumChildren() int {
 	return 0
 }
 
+func (l Leaf) Navigate(names iter.Seq[string]) (Node, error) {
+	for name := range names {
+		return nil, ChildNotFoundError(name)
+	}
+
+	return l, nil
+}
+
 type nameNode struct {
 	Name string
 	Node
