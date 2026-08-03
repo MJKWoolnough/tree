@@ -127,3 +127,24 @@ func TestNavigateMem(t *testing.T) {
 		t.Errorf("test 1: expecting ChildNotFound(Z1) error, got %v", err)
 	}
 }
+
+func TestSubTreeMem(t *testing.T) {
+	var buf, subBuf, data bytes.Buffer
+
+	Serialise(&subBuf, testChild)
+	Serialise(&buf, Leaf(subBuf.Bytes()))
+
+	node, err := OpenMem(buf.Bytes())
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	sub, err := node.SubTree()
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	} else if _, err = sub.WriteTo(&data); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	} else if data.String() != "MNOP" {
+		t.Errorf("expecting data %q, got %q", "MNOP", data.String())
+	}
+}
