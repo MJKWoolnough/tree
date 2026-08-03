@@ -99,9 +99,10 @@ func TestChild(t *testing.T) {
 
 	m, _ := OpenMem(buf.Bytes())
 	tree, _ := OpenFile(f.Name())
+	node := OpenAt(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
 	root, _ := Merge(branch, m)
 
-	for n, test := range [...]Node{m, tree, branch, root} {
+	for n, test := range [...]Node{m, node, tree, branch, root} {
 		if _, err := Child(test, "Child"); err != nil {
 			t.Errorf("test %d: unexpected error: %v", n+1, err)
 		}
@@ -126,9 +127,10 @@ func TestNavigate(t *testing.T) {
 
 	m, _ := OpenMem(buf.Bytes())
 	tree, _ := OpenFile(f.Name())
+	node := OpenAt(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
 	root, _ := Merge(branch, Leaf(""))
 
-	for n, test := range [...]Node{m, tree, branch, root} {
+	for n, test := range [...]Node{m, node, tree, branch, root} {
 		var data strings.Builder
 
 		if node, err := Navigate(test, strings.SplitSeq("A/B", "/")); err != nil {
