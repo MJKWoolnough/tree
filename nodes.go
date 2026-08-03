@@ -53,6 +53,10 @@ func (l Leaf) Navigate(names iter.Seq[string]) (Node, error) {
 	return l, nil
 }
 
+func (l Leaf) SubTree() (*MemTree, error) {
+	return OpenMem(l)
+}
+
 type nameNode struct {
 	Name string
 	Node
