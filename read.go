@@ -428,6 +428,18 @@ func (t *Tree) Navigate(names iter.Seq[string]) (*Tree, error) {
 	return t, nil
 }
 
+func (t *Tree) SubTree() (*Tree, error) {
+	if t.r == nil {
+		return &Tree{}, nil
+	}
+
+	if err := t.initJustData(); err != nil {
+		return nil, err
+	}
+
+	return OpenAt(t.r, t.ptr), nil
+}
+
 // ChildrenError is a Node and error type that is returned from the Children
 // iterator.
 //
