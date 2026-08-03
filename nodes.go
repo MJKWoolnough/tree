@@ -53,6 +53,7 @@ func (l Leaf) Navigate(names iter.Seq[string]) (Node, error) {
 	return l, nil
 }
 
+// SubTree returns a new MemTree created from the data of the current Leaf.
 func (l Leaf) SubTree() (*MemTree, error) {
 	return OpenMem(l)
 }
