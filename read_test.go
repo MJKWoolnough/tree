@@ -350,3 +350,21 @@ func TestNavigateTree(t *testing.T) {
 		t.Errorf("test 1: expecting ChildNotFound(Z1) error, got %v", err)
 	}
 }
+
+func TestSubTree(t *testing.T) {
+	var buf, subBuf, data bytes.Buffer
+
+	Serialise(&subBuf, testChild)
+	Serialise(&buf, Leaf(subBuf.Bytes()))
+
+	node := OpenAt(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+
+	sub, err := node.SubTree()
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	} else if _, err = sub.WriteTo(&data); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	} else if data.String() != "MNOP" {
+		t.Errorf("expecting data %q, got %q", "MNOP", data.String())
+	}
+}
