@@ -428,6 +428,8 @@ func (t *Tree) Navigate(names iter.Seq[string]) (*Tree, error) {
 	return t, nil
 }
 
+// SubTree returns a new Tree created from the data of the current Node without
+// having to read the data into a buffer.
 func (t *Tree) SubTree() (*Tree, error) {
 	if t.r == nil {
 		return &Tree{}, nil
