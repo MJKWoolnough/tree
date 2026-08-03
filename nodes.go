@@ -257,6 +257,8 @@ func Child(node Node, name string) (Node, error) {
 		return node.Child(name)
 	case *Tree:
 		return node.Child(name)
+	case *TreeCloser:
+		return node.Child(name)
 	case Branch:
 		return node.Child(name)
 	case Leaf:
@@ -283,6 +285,8 @@ func Navigate(node Node, names iter.Seq[string]) (Node, error) {
 	case *MemTree:
 		return node.Navigate(names)
 	case *Tree:
+		return node.Navigate(names)
+	case *TreeCloser:
 		return node.Navigate(names)
 	case Leaf:
 		return node.Navigate(names)
