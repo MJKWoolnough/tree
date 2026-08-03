@@ -171,3 +171,7 @@ func (m *MemTree) Navigate(names iter.Seq[string]) (*MemTree, error) {
 
 	return m, nil
 }
+
+func (m *MemTree) SubTree() (*MemTree, error) {
+	return OpenMem(m.data)
+}
