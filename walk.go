@@ -39,7 +39,7 @@ func walk(n Node, fn WalkFunc, path []string) error {
 	for name, child := range n.Children() {
 		cp := append(path, name)
 
-		switch err := fn(cp, n); err {
+		switch err := fn(cp, child); err {
 		default:
 			return err
 		case nil:
