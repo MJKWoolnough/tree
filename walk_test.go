@@ -137,3 +137,57 @@ func navigate(t *testing.T, n Node, path []string) Node {
 
 	return node
 }
+
+func TestFilter(t *testing.T) {
+	tree := Branch{
+		{"A", Branch{
+			{"AA", Branch{
+				{"AAA", Branch{
+					{"AAAA", Leaf("")},
+					{"AAAB", Leaf("")},
+				}},
+				{"AAB", Branch{
+					{"AABA", Leaf("")},
+					{"AABB", Leaf("")},
+				}},
+			}},
+			{"AB", Branch{
+				{"ABA", Leaf("")},
+			}},
+			{"AC", Branch{
+				{"ACA", Leaf("")},
+				{"ACB", Leaf("")},
+			}},
+		}},
+		{"B", Leaf("")},
+	}
+
+	var leafs [][]string
+
+	for name := range Filter(tree, func(_ []string, n Node) int {
+		_, ok := n.(Leaf)
+
+		if ok {
+			return 1
+		}
+
+		return 0
+	}) {
+		leafs = append(leafs, name)
+	}
+
+	expectation := [][]string{
+		{"A", "AA", "AAA", "AAAA"},
+		{"A", "AA", "AAA", "AAAB"},
+		{"A", "AA", "AAB", "AABA"},
+		{"A", "AA", "AAB", "AABB"},
+		{"A", "AB", "ABA"},
+		{"A", "AC", "ACA"},
+		{"A", "AC", "ACB"},
+		{"B"},
+	}
+
+	if !reflect.DeepEqual(leafs, expectation) {
+		t.Errorf("expecting leafs %v, got %v", expectation, leafs)
+	}
+}
