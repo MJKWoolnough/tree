@@ -1,6 +1,10 @@
 package tree
 
-import "errors"
+import (
+	"errors"
+	"iter"
+	"slices"
+)
 
 // WalkFunc is the type of the function called by Walk to visit each Node.
 //
@@ -46,6 +50,18 @@ func walk(n Node, fn WalkFunc, path []string) error {
 	}
 
 	return nil
+}
+
+func Flatten(n Node) iter.Seq2[[]string, Node] {
+	return func(yield func([]string, Node) bool) {
+		Walk(n, func(path []string, n Node) error {
+			if !yield(slices.Clone(path), n) {
+				return SkipAll
+			}
+
+			return nil
+		})
+	}
 }
 
 var (
