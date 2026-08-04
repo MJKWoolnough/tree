@@ -9,7 +9,8 @@ import (
 // WalkFunc is the type of the function called by Walk to visit each Node.
 //
 // The path argument contains the names of the Nodes leading to the current
-// Node.
+// Node. The WalkFunc should not retain the path slice, instead making a copy
+// with slices.Clone or similar.
 //
 // The returned error controls how the Walk continues.
 //
