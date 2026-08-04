@@ -65,6 +65,22 @@ func Flatten(n Node) iter.Seq2[[]string, Node] {
 	}
 }
 
+func Filter(n Node, f func([]string, Node) bool) iter.Seq2[[]string, Node] {
+	return func(yield func([]string, Node) bool) {
+		Walk(n, func(path []string, n Node) error {
+			if !f(path, n) {
+				return SkipNode
+			}
+
+			if !yield(slices.Clone(path), n) {
+				return SkipAll
+			}
+
+			return nil
+		})
+	}
+}
+
 var (
 	// SkipNode tells the Walk to not iterate through the current Nodes children.
 	SkipNode = errors.New("skip this node")
