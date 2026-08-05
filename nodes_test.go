@@ -97,12 +97,13 @@ func TestChild(t *testing.T) {
 	f.Write(buf.Bytes())
 	f.Close()
 
+	n := nameNode{"", branch}
 	m, _ := OpenMem(buf.Bytes())
 	tree, _ := OpenFile(f.Name())
 	node := OpenAt(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
 	root, _ := Merge(branch, m)
 
-	for n, test := range [...]Node{m, node, tree, branch, root} {
+	for n, test := range [...]Node{n, m, node, tree, branch, root} {
 		if _, err := Child(test, "Child"); err != nil {
 			t.Errorf("test %d: unexpected error: %v", n+1, err)
 		}
