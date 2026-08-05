@@ -53,6 +53,8 @@ func walk(n Node, fn WalkFunc, path []string) error {
 	return nil
 }
 
+// Flatten iterates through the tree returning each path and node in lexical
+// order.
 func Flatten(n Node) iter.Seq2[[]string, Node] {
 	return func(yield func([]string, Node) bool) {
 		Walk(n, func(path []string, n Node) error {
@@ -65,6 +67,12 @@ func Flatten(n Node) iter.Seq2[[]string, Node] {
 	}
 }
 
+// Filter iterates through the tree in lexical order, returning the path and
+// node for each Node that passes the given test function.
+//
+// The function should return < 0 to skip the current node and all of its
+// children, 0 to continue recursing down the tree, but not to yield the current
+// node, and > 0 to yield the current node and continue recursing.
 func Filter(n Node, f func([]string, Node) int) iter.Seq2[[]string, Node] {
 	return func(yield func([]string, Node) bool) {
 		Walk(n, func(path []string, n Node) error {
